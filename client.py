@@ -21,7 +21,7 @@ class Shell:
 
         self.__ENV_VARS = {
             "TIMEOUT": 5.0,
-            "BLOCKING": bool(True)
+            "BLOCKING": False
         }
 
     def send_command(self, command: bytes):
@@ -29,9 +29,16 @@ class Shell:
 
     @staticmethod
     def __parse_type(value: str, src: type):
+        bool_values = {
+            False: {"FALSE", "0", "N", "NO"},
+            True: {"TRUE", "1", "Y", "YES"}
+        }
+
+        value = value.upper()
+
         if src is bool:
-            if value == "True" or value == "False":
-                return value == "True"
+            if value in bool_values[False] or value in bool_values[True]:
+                return value in bool_values[True]
             else:
                 raise ValueError()
 
@@ -41,17 +48,18 @@ class Shell:
         if len(segments) != 3:
             return "Invalid use of SET, usage: SET <var_name> <float_value>. See HELP for more info.", False
 
-        segments[1] = segments[1].upper()
-        if segments[1] not in self.__ENV_VARS:
+        var = segments[1].upper()
+        value = segments[2]
+        if var not in self.__ENV_VARS:
             return "Variable not found.", False
 
         try:
-            self.__ENV_VARS[segments[1]] = self.__parse_type(segments[2], type(self.__ENV_VARS[segments[1]]))
-            return segments[1] + " set to: " + segments[2], False
+            self.__ENV_VARS[var] = self.__parse_type(value, type(self.__ENV_VARS[var]))
+            return var + " set to: " + str(self.__ENV_VARS[var]), False
         except (TypeError, ValueError):
-            return segments[1] + " cannot be set to " + segments[2] + " because " + segments[1] + " is not the same " \
-                   "type as " + segments[2] + " (" + segments[1] + " is " + str(type(self.__ENV_VARS[segments[1]])) + \
-                   ", but " + segments[2] + " is " + str(type(segments[2])) + ").", False
+            return var + " cannot be set to " + value + " because " + var + " is not the same " \
+                   "type as " + value + " (" + var + " is " + str(type(self.__ENV_VARS[var])) + \
+                   ", but " + value + " is " + str(type(value)) + ").", False
 
     def __response(self):
         response = self.__socket.recv(1024)
@@ -63,10 +71,6 @@ class Shell:
         msg = b':'.join(segments)
 
         return code, msg
-
-    @staticmethod
-    def __clean(segment: list):
-        return list(filter(None, segment))
 
     def __shell(self):
         while self.__is_connected:
@@ -81,19 +85,14 @@ class Shell:
             except socket.timeout:
                 print(self.__local_label + ": Response timed out.")
 
-            command = input(self.__host + ">> ").upper().encode()
-            segment = Shell.__clean(command.split())
+            command = input(self.__host + ">> ").encode()
 
-            if command == b"::EXIT":
+            if command.upper() == b"::EXIT":
                 self.__is_connected = False
                 self.__socket.close()
                 continue
 
-            if len(segment) > 1:
-                svr_command = b':'.join(segment)
-                self.send_command(svr_command)
-            else:
-                self.send_command(command)
+            self.send_command(command)
 
         self.__local_shell()
 
@@ -136,12 +135,17 @@ class Shell:
 
         return "Invalid command: " + header, False
 
+    # Bare-bones system
+    @staticmethod
+    def __sanitize(segment: list):
+        return list(filter(None, segment))
+
     def __local_shell(self):
         while not self.__is_connected:
             command = input(self.__local_label + ">> ")
 
             if command:
-                segments = self.__clean(command.split())
+                segments = self.__sanitize(command.split())
                 output, should_exit = self.__parse_command(segments)
 
                 print(self.__local_label + ": " + output)

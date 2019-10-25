@@ -12,6 +12,7 @@ class GuessingGame(server.Server):
 
     def _on_init(self):
         self.__games = {}  # Dictionary containing all the running games
+        print("Running server on: " + self.get_host() + ":" + str(self.get_port()))
 
     def __has_game(self, sock: socket):
         return sock in self.__games
@@ -60,19 +61,24 @@ class GuessingGame(server.Server):
             return GuessingGame.MESSAGE_ERROR, b"Invalid command."
 
     @staticmethod
-    def __is_int(value: bytes):
+    def is_int(value):
         try:
             _ = int(value)
         except ValueError:
             return False
         return True
 
+    # Bare-bones system
+    @staticmethod
+    def __sanitize(segment: list):
+        return list(filter(None, segment))
+
     # Main server loop
     def _on_message(self, sock: socket, data: bytes):
-        segments = data.split(b':')
+        segments = GuessingGame.__sanitize(data.upper().split())
 
         # Client-sided command structures: [command]:[value] or [command]
-        if len(segments) > 2 or len(segments) == 2 and not self.__is_int(segments[1]):
+        if len(segments) > 2 or len(segments) == 2 and not self.is_int(segments[1]):
             return b"201:Invalid command structure."
 
         command = segments[0]
@@ -87,6 +93,19 @@ class GuessingGame(server.Server):
         return m_code + b':' + message
 
 
-game = GuessingGame("127.0.0.1", 65432, server.SocketProtocol.TCP)
+config_host = input("HOST: ")
+config_host = config_host if config_host else "127.0.0.1"
+
+config_port = input("PORT: ")
+config_port = int(config_port) if config_port and GuessingGame.is_int(config_port) else 42069
+
+game = None
+
+try:
+    game = GuessingGame(config_host, config_port, server.SocketProtocol.TCP)
+except server.PortRangeException:
+    print("E: port number must be between 0 and 65535.")
+    exit(1)
+
 game.listen()
 game.run()

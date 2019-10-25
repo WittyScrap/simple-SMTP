@@ -10,6 +10,10 @@ class SocketProtocol:
     UDP = socket.SOCK_DGRAM
 
 
+class PortRangeException(Exception):
+    pass
+
+
 class Server:
     def __init__(self, host_name, port, protocol):
         self.__socket: socket.socket
@@ -19,6 +23,9 @@ class Server:
         self.__socket = socket.socket(socket.AF_INET, protocol)
         self.__host = host_name
         self.__port = port
+
+        if port < 0 or port > 65535:
+            raise PortRangeException
 
         # Avoid bind() exception: OSError: [Errno 48] Address already in use
         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -41,6 +48,12 @@ class Server:
 
     def stop(self, sock):
         self.__completed.append(sock)
+
+    def get_host(self):
+        return self.__host
+
+    def get_port(self):
+        return self.__port
 
     def __clean(self):
         while self.__completed:
@@ -67,12 +80,16 @@ class Server:
         data = key.data
 
         if mask & selectors.EVENT_READ:
-            data_received = sock.recv(1024)
-            if not data_received:
+            try:
+                data_received = sock.recv(1024)
+                if not data_received:
+                    self.stop(sock)
+                else:
+                    data.outb += self._on_message(sock, data_received)
+                    print("[" + ':'.join(map(str, data.addr)) + "] says: " + data_received.decode())
+            except (ConnectionAbortedError, ConnectionResetError, ConnectionRefusedError, ConnectionError) as e:
+                print("Connection to " + str(sock.getsockname()) + " was abruptly interrupted, closing...")
                 self.stop(sock)
-            else:
-                data.outb += self._on_message(sock, data_received)
-                print("[" + ':'.join(map(str, data.addr)) + "] says: " + data_received.decode())
 
         if mask & selectors.EVENT_WRITE and data.outb:
             sent = sock.send(data.outb)
