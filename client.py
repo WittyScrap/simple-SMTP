@@ -34,7 +34,8 @@ class Shell:
         self.__ENV_VARS = {
             "TIMEOUT": 5.0,
             "BLOCKING": False,
-            "RAW_INPUT": False,
+            "MULTI_LINE": False,
+            "CONTINUOUS": True,
             "BUFFER_SIZE": int(2048),
             "EXPECT_WELCOME_MESSAGE": True,
             "USE_SSL": False
@@ -111,6 +112,21 @@ class Shell:
                                                                              == 1 and error_level > 1 else "") + "] " +
               response.decode())
 
+    def __poll_response(self):
+        if self.__ENV_VARS["CONTINUOUS"]:
+            complete = False
+            response = ""
+            while not complete:
+                data = self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
+                if len(data) > 0:
+                    response += data
+                else:
+                    complete = True
+
+            return response
+        else:
+            return self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
+
     def __response(self):
         response = self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
 
@@ -133,12 +149,25 @@ class Shell:
         except socket.timeout:
             print(self.__local_label + ": Response timed out.")
 
+    @staticmethod
+    def __get_spaces(count: int) -> str:
+        return ''.join(' ' for x in range(count))
+
+    def __handle_input(self) -> bytes:
+        user_input = input(self.__host + ">> ").encode()
+        command = user_input
+        if self.__ENV_VARS["MULTI_LINE"]:
+            while True:
+                user_input = input(self.__get_spaces(len(self.__host)) + ">> ").encode()
+                if user_input != b"..":
+                    command += b"\r\n" + user_input
+                else:
+                    break
+        return command
+
     def __shell(self):
         while self.__is_connected:
-            command = input(self.__host + ">> ").encode()
-
-            if self.__ENV_VARS["RAW_INPUT"]:
-                command = self.__unsanitize(command)
+            command = self.__handle_input()
 
             if command.upper() == b"::EXIT":
                 self.disconnect()
@@ -193,11 +222,6 @@ class Shell:
     @staticmethod
     def __sanitize(segment: list):
         return list(filter(None, segment))
-
-    # I am a funny person yes
-    @staticmethod
-    def __unsanitize(raw_input: bytes):
-        return raw_input.replace(b'\\n', b'\n').replace(b'\\r', b'\r').replace(b'\\t', b'\t')
 
     def __local_message(self, msg: str):
         print(self.__local_label + ": " + msg)
