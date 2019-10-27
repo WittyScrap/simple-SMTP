@@ -34,19 +34,32 @@ class Shell:
         self.__ENV_VARS = {
             "TIMEOUT": 5.0,
             "BLOCKING": False,
-            "MULTI_LINE": False,
             "CONTINUOUS": True,
             "BUFFER_SIZE": int(2048),
-            "EXPECT_WELCOME_MESSAGE": True,
+            "EXPECT_WELCOME_MESSAGE": False,
             "USE_SSL": False
         }
+
+    def get_host(self):
+        return self.__host if self.__is_connected else ""
+
+    def get_port(self):
+        return self.__port if self.__is_connected else 0
 
     def __show_variables(self, segments):
         return 'Environment variables:\n\n' + '\n'.join(k.lower() + ' = ' + str(self.__ENV_VARS[k]) for k in
                                                         self.__ENV_VARS) + '\n', False
 
-    def send_command(self, command: bytes):
-        self.__socket.sendall(command)
+    def send_bytes(self, command: bytes):
+        if self.__is_connected:
+            try:
+                self.__socket.sendall(command)
+            except ConnectionAbortedError as e:
+                if hasattr(e, "message"):
+                    self.__local_message("The connection was aborted due to the following reason:", e.message)
+                else:
+                    print(self.__local_label + ": The connection was aborted due to the following reason: ", end='')
+                    print(e)
 
     def __parse(self, response):
         return self.__parser.__parse_response__(response)
@@ -61,16 +74,16 @@ class Shell:
             self.__parser = None
             return "Parser successfully reset.", False
 
-        if not os.path.exists(parser_name + ".py"):
-            return "Module not found (Are you missing a component for the client?).", False
-
         try:
             parser_module = importlib.import_module(parser_name)
-            self.__parser = parser_module
 
-            return "Parser " + parser_name + " loaded successfully.", False
+            if not hasattr(parser_module, "__parse_response__"):
+                raise Exception("Invalid parser module (entry point not implemented).")
+            else:
+                self.__parser = parser_module
+                return "Parser " + parser_name + " loaded successfully.", False
         except Exception as e:
-            return "Unable to load parser module due to exception: " + str(e), False
+            return "Error: " + str(e), False
 
     @staticmethod
     def __parse_type(value: str, src: type):
@@ -112,23 +125,30 @@ class Shell:
                                                                              == 1 and error_level > 1 else "") + "] " +
               response.decode())
 
-    def __poll_response(self):
+    def __recvall(self):
+        buffer_size = self.__ENV_VARS["BUFFER_SIZE"]
         if self.__ENV_VARS["CONTINUOUS"]:
-            complete = False
-            response = ""
-            while not complete:
-                data = self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
-                if len(data) > 0:
-                    response += data
+            response = bytearray()
+            try:
+                while True:
+                    data = self.__socket.recv(buffer_size)
+                    if not data:
+                        break
+                    else:
+                        response.extend(data)
+            except socket.timeout as e:
+                if response:
+                    return response
                 else:
-                    complete = True
-
-            return response
+                    raise e
         else:
-            return self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
+            return self.__socket.recv(buffer_size)
 
     def __response(self):
-        response = self.__socket.recv(self.__ENV_VARS["BUFFER_SIZE"])
+        response = self.__recvall()
+
+        if not response:
+            return None
 
         if self.__parser:
             msg, err_level = self.__parse(response)
@@ -142,10 +162,12 @@ class Shell:
         self.__is_connected = False
         self.__socket.close()
 
-    def __handle_response(self):
+    def receive_bytes(self):
         try:
-            if not self.__response():
+            response = self.__response()
+            if not response:
                 self.disconnect()
+            return response
         except socket.timeout:
             print(self.__local_label + ": Response timed out.")
 
@@ -154,26 +176,75 @@ class Shell:
         return ''.join(' ' for x in range(count))
 
     def __handle_input(self) -> bytes:
-        user_input = input(self.__host + ">> ").encode()
-        command = user_input
-        if self.__ENV_VARS["MULTI_LINE"]:
-            while True:
-                user_input = input(self.__get_spaces(len(self.__host)) + ">> ").encode()
-                if user_input != b"..":
-                    command += b"\r\n" + user_input
-                else:
-                    break
-        return command
+        entry = input(self.__host + ">> ")
+        command = ""
+
+        while entry and entry[-1] == "\\":
+            command += entry[:-1] + "\r\n"
+            entry = input(self.__get_spaces(len(self.__host)) + ">> ")
+
+        command += entry
+
+        return command.encode()
+
+    @staticmethod
+    def __parse_exec_call(call) -> (str, str):
+        segments = call.split(b'.')
+        if len(segments) == 1:
+            return segments[0], None
+
+        function = segments[-1]
+        module = b'.'.join(segments[:-1])
+
+        return module, function
+
+    def __exec_script(self, exec_command):
+        if len(exec_command) == 1:
+            self.__local_message("Incomplete EXEC command: please provide call and arguments (where needed).")
+            return
+
+        segments = exec_command[1:]
+        call = segments[0]
+        args = segments[1:] if len(segments) > 1 else None
+
+        module, function = Shell.__parse_exec_call(call)
+        if not function:
+            self.__local_message("Incomplete EXEC command: module name or function call missing.")
+            return
+
+        try:
+            imported_module = importlib.import_module(module.decode())
+            imported_method = getattr(imported_module, function.decode())
+            imported_method(self, args)
+        except Exception as e:
+            if hasattr(e, "message"):
+                self.__local_message(e.message)
+            else:
+                print(self.__local_label + ": ", end='')
+                print(e)
+
+    def __handle_remote_macros(self, command: bytes) -> bool:
+        if command[:2] != b"::":
+            return False
+
+        command_structure = command[2:].split()
+        command_core = command_structure[0].upper()
+        if command_core == b"EXIT":
+            self.disconnect()
+            return True
+        if command_core == b"EXEC":
+            self.__exec_script(command_structure)
+            return True
+
+        return False
 
     def __shell(self):
         while self.__is_connected:
             command = self.__handle_input()
 
-            if command.upper() == b"::EXIT":
-                self.disconnect()
-            else:
-                self.send_command(command)
-                self.__handle_response()
+            if not self.__handle_remote_macros(command):
+                self.send_bytes(command)
+                self.receive_bytes()
 
         self.__local_shell()
 
@@ -252,11 +323,13 @@ class Shell:
             if show_message:
                 self.__local_message("Will connect to host: " + host + ", on port: " + str(port))
 
+            timeout = self.__ENV_VARS["TIMEOUT"] if not self.__ENV_VARS["BLOCKING"] else None
+
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.__socket.settimeout(self.__ENV_VARS["TIMEOUT"])  # Connection timeout
+            self.__socket.settimeout(timeout)  # Connection timeout
             self.__socket.connect((host, port))
             self.__socket.setblocking(not non_blocking)
-            self.__socket.settimeout(self.__ENV_VARS["TIMEOUT"])  # Message handling timeout
+            self.__socket.settimeout(timeout)  # Message handling timeout
 
             if self.__ENV_VARS["USE_SSL"]:
                 self.__socket = ssl.wrap_socket(self.__socket, keyfile=None, certfile=None, server_side=False,
@@ -265,7 +338,7 @@ class Shell:
             self.__is_connected = True
 
             if self.__ENV_VARS["EXPECT_WELCOME_MESSAGE"]:
-                self.__handle_response()
+                self.receive_bytes()
 
         except (socket.gaierror, TimeoutError, ssl.SSLError, ConnectionRefusedError) as e:
             return "Could not connect to specified address on specified port due to error: " + str(type(e)) + "."
