@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Generic server framework
 
 import socket

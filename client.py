@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Client side for any server.Server based application
 
 import socket

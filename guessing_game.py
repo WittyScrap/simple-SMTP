@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Guessing game server
 
 import server
