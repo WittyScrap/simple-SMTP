@@ -32,7 +32,7 @@ class Shell:
         }
 
         self.__ENV_VARS = {
-            "TIMEOUT": 5.0,
+            "TIMEOUT": 0.5,
             "BLOCKING": False,
             "CONTINUOUS": True,
             "BUFFER_SIZE": int(2048),
@@ -54,12 +54,8 @@ class Shell:
         if self.__is_connected:
             try:
                 self.__socket.sendall(command)
-            except ConnectionAbortedError as e:
-                if hasattr(e, "message"):
-                    self.__local_message("The connection was aborted due to the following reason:", e.message)
-                else:
-                    print(self.__local_label + ": The connection was aborted due to the following reason: ", end='')
-                    print(e)
+            except (ConnectionAbortedError, ConnectionResetError, ConnectionRefusedError, ConnectionError) as e:
+                self.__local_message("The connection was aborted due to the following reason: " + str(e))
 
     def __parse(self, response):
         return self.__parser.__parse_response__(response)
@@ -137,10 +133,13 @@ class Shell:
                     else:
                         response.extend(data)
             except socket.timeout as e:
+                if not response:
+                    raise e
+            except (ConnectionAbortedError, ConnectionResetError, ConnectionRefusedError, ConnectionError):
+                return None
+            finally:
                 if response:
                     return response
-                else:
-                    raise e
         else:
             return self.__socket.recv(buffer_size)
 
@@ -153,7 +152,7 @@ class Shell:
         if self.__parser:
             msg, err_level = self.__parse(response)
             self.__display(err_level, msg)
-            return err_level < 2
+            return msg if err_level < 2 else None
         else:
             self.__display(0, response, 1)
             return response
@@ -234,6 +233,9 @@ class Shell:
             return True
         if command_core == b"EXEC":
             self.__exec_script(command_structure)
+            return True
+        if command_core == b"RECV":
+            self.receive_bytes()
             return True
 
         return False
@@ -340,8 +342,9 @@ class Shell:
             if self.__ENV_VARS["EXPECT_WELCOME_MESSAGE"]:
                 self.receive_bytes()
 
-        except (socket.gaierror, TimeoutError, ssl.SSLError, ConnectionRefusedError) as e:
-            return "Could not connect to specified address on specified port due to error: " + str(type(e)) + "."
+        except (socket.gaierror, socket.timeout, TimeoutError, ssl.SSLError, ConnectionRefusedError,
+                ConnectionResetError) as e:
+            return "Could not connect to specified address on specified port due to error: " + str(e) + "."
 
 
 shell = Shell("local")

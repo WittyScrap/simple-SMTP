@@ -20,8 +20,8 @@ class GuessingGame(server.Server):
     def __get_players(self):
         players = b""
         for player in self.__games:
-            address, port = player.getsockname()
-            players += ('\t\t\t- ' + address + ":" + str(port)).encode()
+            address, port = player.getpeername()
+            players += b'\r\n' + ('\t\t\t- ' + address + ":" + str(port)).encode()
 
         return players
 
