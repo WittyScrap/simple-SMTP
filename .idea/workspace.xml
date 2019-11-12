@@ -176,11 +176,11 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.server" />
       <item itemvalue="Python.client" />
-      <item itemvalue="Python.server (1)" />
       <item itemvalue="Python.guessing_game" />
       <item itemvalue="Python.http_commands" />
+      <item itemvalue="Python.server (1)" />
+      <item itemvalue="Python.server" />
     </list>
     <recent_temporary>
       <list>
