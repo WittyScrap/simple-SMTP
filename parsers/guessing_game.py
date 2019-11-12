@@ -1,5 +1,5 @@
 # Parser function body
-def __parse_response__(response):
+def on_response(response):
     __CODE_MAPPER = {
         200: 0,
         201: 1,
@@ -13,3 +13,8 @@ def __parse_response__(response):
 
     msg = b':'.join(segments)
     return msg, __CODE_MAPPER[code]
+
+
+# Parser for transmitting messages
+def on_message(user_input):
+    return user_input

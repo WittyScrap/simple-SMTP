@@ -5,6 +5,7 @@ import socket
 import importlib
 import os
 import ssl
+import encryption
 
 
 class Shell:
@@ -15,6 +16,7 @@ class Shell:
         self.__socket = None
         self.__is_connected = False
         self.__parser = None
+        self.__crypt = None
 
         self.__COMMANDS = {
             "CONNECT": self.__connect_command,
@@ -23,6 +25,7 @@ class Shell:
             "EXIT": lambda x: ("Goodbye", True),
             "HELP": self.__show_help,
             "USE": self.__set_parser_command,
+            "ENCRYPT": self.__set_encryption_command,
             "PARSER": lambda x: (self.__parser.__name__, False) if self.__parser else ("No parser.", False)
         }
 
@@ -40,16 +43,12 @@ class Shell:
             "EXPECT_WELCOME_MESSAGE": False,
             "USE_SSL": False
         }
-
-    def get_host(self):
-        return self.__host if self.__is_connected else ""
-
-    def get_port(self):
-        return self.__port if self.__is_connected else 0
+    #def
 
     def __show_variables(self, segments):
         return 'Environment variables:\n\n' + '\n'.join(k.lower() + ' = ' + str(self.__ENV_VARS[k]) for k in
-                                                        self.__ENV_VARS) + '\n', False
+                                                        self.__ENV_VARS) + '\n',
+    #def
 
     def send_bytes(self, command: bytes):
         if self.__is_connected:
@@ -57,9 +56,34 @@ class Shell:
                 self.__socket.sendall(command)
             except (ConnectionAbortedError, ConnectionResetError, ConnectionRefusedError, ConnectionError) as e:
                 self.__local_message("The connection was aborted due to the following reason: " + str(e))
+    #def
 
-    def __parse(self, response):
-        return self.__parser.__parse_response__(response)
+    def __set_encryption_command(self, segments):
+        if len(segments) != 2:
+            return "Invalid use of ENCRYPT command, usage: ENCRYPT {crypt_name | __none}. See HELP for more info.",\
+                   False
+
+        encryption_name = segments[1]
+
+        if encryption_name.upper() == "__NONE":
+            self.__crypt = None
+            return "Encryption successfully disabled.", False
+
+        try:
+            module_name = '.'.join(encryption_name.split('.')[:-1])
+            class_name = encryption_name.split('.')[-1]
+
+            encryption_module = importlib.import_module(module_name)
+            encryption_instance = getattr(encryption_module, class_name)()
+
+            if not hasattr(encryption_instance, "encrypt") or not hasattr(encryption_instance, "decrypt"):
+                raise Exception("Invalid encryption module (no encrypt or decrypt methods were found).")
+            else:
+                self.__crypt = encryption_instance
+                return "Encryption set to: " + encryption_name, False
+        except Exception as e:
+            return "Error: " + str(e), False
+    #def
 
     def __set_parser_command(self, segments):
         if len(segments) != 2:
@@ -81,6 +105,7 @@ class Shell:
                 return "Parser " + parser_name + " loaded successfully.", False
         except Exception as e:
             return "Error: " + str(e), False
+    #def
 
     @staticmethod
     def __parse_type(value: str, src: type):
@@ -98,6 +123,7 @@ class Shell:
                 raise ValueError()
 
         return src(value)
+    #def
 
     def __set_command(self, segments):
         if len(segments) != 3:
@@ -115,12 +141,14 @@ class Shell:
             return var + " cannot be set to " + value + " because " + var + " is not the same " \
                    "type as " + value + " (" + var + " is " + str(type(self.__ENV_VARS[var])) + \
                    ", but " + value + " is " + str(type(value)) + ").", False
+    #def
 
     # error_visibility: 0 = never show error level, 1 = only show errors, 2 = show all.
     def __display(self, error_level: int, response: bytes, error_visibility=2):
         print("[" + self.__host + (":" + self.__ERROR_LEVELS[error_level] if error_visibility == 2 or error_visibility
                                                                              == 1 and error_level > 1 else "") + "] " +
               response.decode())
+    #def
 
     def __recvall(self):
         buffer_size = self.__ENV_VARS["BUFFER_SIZE"]
@@ -143,6 +171,7 @@ class Shell:
                     return response
         else:
             return self.__socket.recv(buffer_size)
+    #def
 
     def __response(self):
         response = self.__recvall()
@@ -151,29 +180,18 @@ class Shell:
             return None
 
         if self.__parser:
-            msg, err_level = self.__parse(response)
+            msg, err_level = self.__parser.on_response(response)
             self.__display(err_level, msg)
             return msg if err_level < 2 else None
         else:
             self.__display(0, response, 1)
             return response
-
-    def disconnect(self):
-        self.__is_connected = False
-        self.__socket.close()
-
-    def receive_bytes(self):
-        try:
-            response = self.__response()
-            if not response:
-                self.disconnect()
-            return response
-        except socket.timeout:
-            print(self.__local_label + ": Response timed out.")
+    #def
 
     @staticmethod
     def __get_spaces(count: int) -> str:
         return ''.join(' ' for x in range(count))
+    #def
 
     def __handle_input(self) -> bytes:
         entry = input(self.__host + ">> ")
@@ -185,7 +203,11 @@ class Shell:
 
         command += entry
 
-        return command.encode()
+        if self.__parser:
+            return self.__parser.on_message(command)
+        else:
+            return command.encode()
+    #def
 
     @staticmethod
     def __parse_exec_call(call) -> (str, str):
@@ -197,6 +219,7 @@ class Shell:
         module = b'.'.join(segments[:-1])
 
         return module, function
+    #def
 
     def __exec_script(self, exec_command):
         if len(exec_command) == 1:
@@ -222,6 +245,7 @@ class Shell:
             else:
                 print(self.__local_label + ": ", end='')
                 print(e)
+    #def
 
     def __handle_remote_macros(self, command: bytes) -> bool:
         if command[:2] != b"::":
@@ -240,6 +264,7 @@ class Shell:
             return True
 
         return False
+    #def
 
     def __shell(self):
         while self.__is_connected:
@@ -250,6 +275,7 @@ class Shell:
                 self.receive_bytes()
 
         self.__local_shell()
+    #def
 
     @staticmethod
     def __is_int(value: bytes):
@@ -258,6 +284,7 @@ class Shell:
         except ValueError:
             return False
         return True
+    #def
 
     @staticmethod
     def __show_help(_) -> (str, bool):
@@ -269,6 +296,7 @@ class Shell:
                "HELP                         - Shows this help message\n" \
                "USE {parser_name | __none}   - Selects the message parser. This must be a python module.\n" \
                "PARSER                       - Shows the current parser.\n", False
+    #def
 
     def __connect_command(self, segments) -> (str, bool):
         if len(segments) != 3:
@@ -283,6 +311,7 @@ class Shell:
             return "Connection to " + segments[1] + ":" + segments[2] + " completed.", False
         else:
             return o, False
+    #def
 
     def __parse_command(self, segments) -> (str, bool):
         header = segments[0].upper()
@@ -291,14 +320,17 @@ class Shell:
             return self.__COMMANDS[header](segments)
 
         return "Invalid command: " + header, False
+    #def
 
     # Bare-bones system
     @staticmethod
     def __sanitize(segment: list):
         return list(filter(None, segment))
+    #def
 
     def __local_message(self, msg: str):
         print(self.__local_label + ": " + msg)
+    #def
 
     def __local_shell(self):
         while not self.__is_connected:
@@ -314,9 +346,21 @@ class Shell:
                     return
 
         self.__shell()
+    #def
 
     def start(self):
         self.__local_shell()
+    #def
+
+    def receive_bytes(self):
+        try:
+            response = self.__response()
+            if not response:
+                self.disconnect()
+            return response
+        except socket.timeout:
+            print(self.__local_label + ": Response timed out.")
+    #def
 
     def connect(self, host: str, port: int, non_blocking=False, show_message=False):
         try:
@@ -346,6 +390,21 @@ class Shell:
         except (socket.gaierror, socket.timeout, TimeoutError, ssl.SSLError, ConnectionRefusedError,
                 ConnectionResetError) as e:
             return "Could not connect to specified address on specified port due to error: " + str(e) + "."
+    #def
+
+    def disconnect(self):
+        self.__is_connected = False
+        self.__socket.close()
+    #def
+
+    def get_host(self):
+        return self.__host if self.__is_connected else ""
+    #def
+
+    def get_port(self):
+        return self.__port if self.__is_connected else 0
+    #def
+#class
 
 
 shell = Shell("local")

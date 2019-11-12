@@ -35,35 +35,44 @@ class Server:
         self.__selector = selectors.DefaultSelector()
         self.__completed = []  # List of sockets that have requested a STOP
         self._on_init()
+    #def
 
     def _on_message(self, sock: socket, data: bytes) -> bytes:
         pass
+    #def
 
     def _on_init(self):
         pass
+    #def
 
     def listen(self):
         self.__socket.listen()
         self.__socket.setblocking(False)
         self.__selector.register(self.__socket, selectors.EVENT_READ | selectors.EVENT_WRITE, data=None)
+    #def
 
     def stop(self, sock):
         self.__completed.append(sock)
+    #def
 
     def get_host(self):
         return self.__host
+    #def
 
     def get_port(self):
         return self.__port
+    #def
 
     def __clean(self):
         while self.__completed:
             self.__end(self.__completed.pop())
+    #def
 
     def __end(self, sock: socket):
         print("Disconnecting from:", sock.getsockname())
         self.__selector.unregister(sock)
         sock.close()
+    #def
 
     def run(self):
         while True:
@@ -75,6 +84,7 @@ class Server:
                     self.__service_connection(key, mask)
 
             self.__clean()
+    #def
 
     def __service_connection(self, key, mask):
         sock = key.fileobj
@@ -96,6 +106,7 @@ class Server:
             sent = sock.send(data.outb)
             print("to: " + ':'.join(map(str, data.addr)) + ">> " + data.outb.decode())
             data.outb = data.outb[sent:]
+    #def
 
     def __accept_wrapper(self, sock: socket):
         connection, address = sock.accept()  # Should be ready to read
@@ -108,3 +119,5 @@ class Server:
 
         # Send info to client about successful connection
         connection.sendall(b'200:Connection established.')
+    #def
+#class
