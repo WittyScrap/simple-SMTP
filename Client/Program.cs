@@ -17,7 +17,7 @@ namespace Client
         /// <param name="args">Optional argument list.</param>
         static void Main(string[] args)
         {
-            IShell shell = new IShell();
+            
         }
     }
 }
