@@ -26,5 +26,11 @@ namespace Client
         /// </summary>
         /// <param name="command">The raw command to be sent and parsed.</param>
         void SendCommand(string command);
+
+		/// <summary>
+		/// Handles receiving a string output to display to the console.
+		/// </summary>
+		/// <param name="output">The output that has been received.</param>
+		void Receive(string source, string output);
     }
 }

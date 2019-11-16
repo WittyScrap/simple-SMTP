@@ -80,7 +80,14 @@ namespace Client
         /// </summary>
         public void Stop()
         {
-            throw new NotImplementedException();
+			if (_shellState > ShellState.Closed)
+			{
+				OnShellDestruction();
+			}
+			else
+			{
+				Logger.Message(Logger.WRN, "The shell is not running, skipping...");
+			}
         }
 
         /// <summary>
@@ -88,6 +95,12 @@ namespace Client
         /// </summary>
         /// <param name="command">The command to parse and send.</param>
         public abstract void SendCommand(string command);
+
+		/// <summary>
+		/// Handles receiving text that should be shown to the console.
+		/// </summary>
+		/// <param name="output">The output that was received.</param>
+		public abstract void Receive(string source, string output);
 
         /// <summary>
         /// The current state of the shell.
@@ -109,6 +122,11 @@ namespace Client
         /// Called when the shell needs to switch to its ready state.
         /// </summary>
         protected abstract bool OnShellInit();
+
+		/// <summary>
+		/// Called when the shell is about to be closed.
+		/// </summary>
+		protected abstract void OnShellDestruction();
 
 
         /* ------------ */

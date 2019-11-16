@@ -17,7 +17,9 @@ namespace Client
         /// <param name="args">Optional argument list.</param>
         static void Main(string[] args)
         {
-            
+			NetworkShell shell = new NetworkShell();
+			shell.Create(800, 600);
+			shell.Run();
         }
     }
 }
