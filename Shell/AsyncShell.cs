@@ -91,7 +91,7 @@ namespace Shell
 			}
 			else
 			{
-				Receive(entityHost, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
+				Receive(entityMachine, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
 			}
 		}
 
@@ -124,7 +124,7 @@ namespace Shell
 				}
 
 				Receive(entityUser, command);
-				Receive(entityHost, @"Error: \i " + error + @"\i0");
+				Receive(entityMachine, @"Error: \i " + error + @"\i0");
 			}
 			else
 			{
@@ -193,7 +193,7 @@ namespace Shell
 				EnqueueCommand(() => OnInput += SendCommand);
 				EnqueueCommand(() => SetActive(true));
 
-				Receive(entityHost, @"Console ready, type \i help \i0 for more information.");
+				Receive(entityMachine, @"Console ready, type \i help \i0 for more information.");
 				return true;
 			}
 			else
