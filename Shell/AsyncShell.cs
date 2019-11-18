@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 // Disambiguations
 using Timer = System.Windows.Forms.Timer;
@@ -60,6 +57,11 @@ namespace Shell
 		}
 
 		/// <summary>
+		/// Checks that this shell is active and can be written to.
+		/// </summary>
+		public bool IsActive => !input.ReadOnly;
+
+		/// <summary>
 		/// Appends RTF-formatted output to the output view.
 		/// </summary>
 		/// <param name="rtf">The RTF-formatted output.</param>
@@ -89,7 +91,7 @@ namespace Shell
 			}
 			else
 			{
-				Receive(entityMachine, @"Error:\i  Command " + command + @" does not exist.\i0");
+				Receive(entityHost, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
 			}
 		}
 
@@ -106,7 +108,7 @@ namespace Shell
 		/// Sends a command to the remote host.
 		/// </summary>
 		/// <param name="command">The command to send to the remote host.</param>
-		public void SendCommand(string command)
+		public async void SendCommand(string command)
 		{
 			if (!ParseCommand(command, out var parsedCommand))
 			{
@@ -122,12 +124,15 @@ namespace Shell
 				}
 
 				Receive(entityUser, command);
-				Receive(entityMachine, @"Error: \i " + error + @"\i0");
+				Receive(entityHost, @"Error: \i " + error + @"\i0");
 			}
 			else
 			{
+				SetActive(false);
 				Receive(entityUser, GetCommandFormat(parsedCommand.header, parsedCommand.args));
-				OnCommandSend(parsedCommand.header, parsedCommand.args);
+				Task commandTask = Task.Run(() => OnCommandSend(parsedCommand.header, parsedCommand.args));
+				await commandTask;
+				SetActive(true);
 			}
 		}
 
@@ -152,6 +157,7 @@ namespace Shell
 		protected virtual bool OnShellCreation(int width, int height)
 		{
 			_windowCommandQueue = new ConcurrentQueue<Action>();
+			_inputHistory = new LinkedList<string>();
 			var consoleCreated = new ManualResetEvent(false);
 
 			_formThread = new Thread(() =>
@@ -187,7 +193,7 @@ namespace Shell
 				EnqueueCommand(() => OnInput += SendCommand);
 				EnqueueCommand(() => SetActive(true));
 
-				Receive(entityMachine, @"Console ready, type \i help \i0 for more information.");
+				Receive(entityHost, @"Console ready, type \i help \i0 for more information.");
 				return true;
 			}
 			else
@@ -301,7 +307,7 @@ namespace Shell
 		{
 			argName = "";
 
-			if (key[0] != '-' || key.Length == 3 && key[1] == '-' || key.Length > 2 && key[1] != '-')
+			if (key.Length == 0 || key[0] != '-' || key.Length == 3 && key[1] == '-' || key.Length > 2 && key[1] != '-')
 			{
 				return false;
 			}
@@ -342,7 +348,7 @@ namespace Shell
 			foreach (var arg in args)
 			{
 				string key = arg.Key;
-				object val = arg.Value;
+				object val = arg.Value.Value;
 
 				if (key.Length > 1)
 				{
@@ -437,11 +443,11 @@ namespace Shell
 		/// </summary>
 		public void DisplayHelp()
 		{
-			string format = @"\cf1\b Command List:\b0\cf3\line ";
+			string format = @"\cf1\b Command List:\b0\cf3";
 
 			foreach (ICommand command in _commandSet)
 			{
-				format += command.Help + @"\line ";
+				format += @"\line " + command.Help;
 			}
 
 			Receive(entityMachine, format);
@@ -458,7 +464,50 @@ namespace Shell
 			if (e.KeyChar == (char)Keys.Return)
 			{
 				OnInput?.Invoke(input.Text);
+				_inputHistory.AddLast(input.Text);
+				_historyPlace = null;
 				input.Text = "";
+			}
+		}
+
+		/// <summary>
+		/// Event triggered when a key has been pressed down.
+		/// </summary>
+		private void Input_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (_inputHistory.Count == 0 || !IsActive)
+			{
+				return;
+			}
+
+			if (e.KeyCode == Keys.Up)
+			{
+				if (_historyPlace == null)
+				{
+					_historyPlace = _inputHistory.Last;
+					input.Text = _historyPlace.Value;
+				}
+				else
+				{
+					if (_historyPlace.Previous != null)
+					{
+						_historyPlace = _historyPlace.Previous;
+					}
+					input.Text = _historyPlace.Value;
+				}
+			}
+
+			if (e.KeyCode == Keys.Down)
+			{
+				if (_historyPlace == null)
+				{
+					return;
+				}
+				if (_historyPlace.Next != null)
+				{
+					_historyPlace = _historyPlace.Next;
+				}
+				input.Text = _historyPlace.Value;
 			}
 		}
 
@@ -470,6 +519,8 @@ namespace Shell
 		// -- Shell management -- //
 
 		private ConcurrentQueue<Action> _windowCommandQueue;
+		private LinkedListNode<string> _historyPlace;
+		private LinkedList<string> _inputHistory;
 		private TCommandSet _commandSet;
 		private ShellState _shellState;
 		private Thread _formThread;
@@ -478,9 +529,14 @@ namespace Shell
 		// -- Entities management -- //
 
 		/// <summary>
-		/// The local or remote machine.
+		/// The local machine.
 		/// </summary>
 		protected virtual string entityMachine => "local";
+
+		/// <summary>
+		/// The local or remote machine.
+		/// </summary>
+		protected virtual string entityHost => entityMachine;
 
 		/// <summary>
 		/// User input.

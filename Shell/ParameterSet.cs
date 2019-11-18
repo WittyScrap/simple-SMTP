@@ -15,5 +15,26 @@ namespace Shell
 		{
 			this[arg.Key] = arg;
 		}
+
+		/// <summary>
+		/// Returns a command arg that matches any of the keys.
+		/// </summary>
+		/// <param name="validKeys">The list of valid keys to match.</param>
+		/// <returns>The command that matches any of the keys.</returns>
+		public bool Either(out object arg, params string[] validKeys)
+		{
+			arg = default;
+
+			foreach (string key in validKeys)
+			{
+				if (ContainsKey(key))
+				{
+					arg = this[key].Value;
+					return true;
+				}
+			}
+
+			return false;
+		}
 	}
 }

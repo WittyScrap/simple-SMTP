@@ -22,7 +22,9 @@ namespace Client
 			_commands = new Dictionary<string, ICommand>();
 
 			// Save commands
-			_commands["help"] = new HelpCommand();
+			_commands["help"]		= new HelpCommand();
+			_commands["connect"]	= new ConnectCommand();
+			_commands["disconnect"] = new DisconnectCommand();
 		}
 
 		/// <summary>

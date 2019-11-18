@@ -55,12 +55,13 @@
 			this.input.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.input.ForeColor = System.Drawing.SystemColors.ControlText;
-			this.input.Location = new System.Drawing.Point(64, 487);
+			this.input.Location = new System.Drawing.Point(93, 487);
 			this.input.Name = "input";
 			this.input.ReadOnly = true;
-			this.input.Size = new System.Drawing.Size(709, 22);
+			this.input.Size = new System.Drawing.Size(678, 22);
 			this.input.TabIndex = 1;
 			this.input.WordWrap = false;
+			this.input.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Input_KeyDown);
 			this.input.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Input_KeyPressed);
 			// 
 			// commandLabel
@@ -69,9 +70,9 @@
 			this.commandLabel.AutoSize = true;
 			this.commandLabel.Location = new System.Drawing.Point(12, 490);
 			this.commandLabel.Name = "commandLabel";
-			this.commandLabel.Size = new System.Drawing.Size(46, 17);
+			this.commandLabel.Size = new System.Drawing.Size(75, 17);
 			this.commandLabel.TabIndex = 2;
-			this.commandLabel.Text = "Local:";
+			this.commandLabel.Text = "Command:";
 			// 
 			// outputBody
 			// 

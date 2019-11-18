@@ -53,6 +53,8 @@
     <Compile Include="ClientShell.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="ConnectCommand.cs" />
+    <Compile Include="DisconnectCommand.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
