@@ -8,10 +8,11 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>Client</RootNamespace>
     <AssemblyName>Client</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,26 +49,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncShell.cs" />
-    <Compile Include="FormShell.cs">
+    <Compile Include="ClientCommandSet.cs" />
+    <Compile Include="ClientShell.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormShell.Designer.cs">
-      <DependentUpon>FormShell.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Logger.cs" />
-    <Compile Include="NetworkShell.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="IShell.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="FormShell.resx">
-      <DependentUpon>FormShell.cs</DependentUpon>
-    </EmbeddedResource>
+    <ProjectReference Include="..\Shell\Shell.csproj">
+      <Project>{38d6994c-c74f-4602-84f7-c12632dc44c3}</Project>
+      <Name>Shell</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
