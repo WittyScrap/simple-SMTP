@@ -90,7 +90,7 @@ namespace Client
 		/// </summary>
 		private bool Error(IShell sourceShell, string errorMessage)
 		{
-			sourceShell.Receive("connect", errorMessage);
+			sourceShell.Print("connect", errorMessage);
 			return false;
 		}
 	}

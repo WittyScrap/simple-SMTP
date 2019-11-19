@@ -16,7 +16,7 @@ namespace Client
 		/// <summary>
 		/// Displays the help section for this command.
 		/// </summary>
-		public string Help => @"\cf1\b vars:\b0\cf2\i  Displays all environmental variables as currently loaded in memory.\i0";
+		public string Help => @"\cf1\b vars \b0\cf2\i [--set/-s\cf3\i0  var_name\cf2\i  <--value/-v\cf3\i0  var_value\cf2\i > [--show]]\i0\b\cf1 :\b0\cf2\i  Displays all environmental variables as currently loaded in memory.\i0";
 
 		/// <summary>
 		/// Displays all environmental variables.
@@ -25,16 +25,66 @@ namespace Client
 		{
 			if (sourceShell is ClientShell)
 			{
-				string formattedOutput = "";
 				ClientShell clientShell = sourceShell as ClientShell;
-				DisplayVariableBlock(clientShell.Variables.Root, ref formattedOutput);
-				clientShell.Receive("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput);
-				return true;
+
+				object variableNameBoxed = null;
+				bool hasSet = args != null && args.Either(out variableNameBoxed, "s", "set");
+
+				if (!hasSet)
+				{
+					string formattedOutput = "";
+
+					DisplayVariableBlock(clientShell.Variables.Root, ref formattedOutput);
+					clientShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
+
+					return true;
+				}
+				else
+				{
+					if (variableNameBoxed == null)
+					{
+						return Error(clientShell, "Incomplete vars command: set flag was found, but no variable name was provided.");
+					}
+
+					bool hasValue = args.Either(out object variableValueBoxed, "v", "value");
+					bool shouldShow = args.Either(out _, "show");
+
+					if (!hasValue || variableValueBoxed == null)
+					{
+						return Error(clientShell, "Incomplete vars command: set flag was found, but no value was provided.");
+					}
+
+					string variableName = (string)variableNameBoxed;
+					string variableValue = (string)variableValueBoxed;
+
+					if (!VariablesParser.TryParse(variableValue, out object parsedValue))
+					{
+						return Error(clientShell, "Invalid value type provided.");
+					}
+
+					try
+					{
+						clientShell.Variables[variableName] = parsedValue;
+					}
+					catch (Exception e)
+					{
+						return Error(clientShell, "Error: " + e.Message);
+					}
+
+					if (shouldShow)
+					{
+						string formattedOutput = "";
+
+						DisplayVariableBlock(clientShell.Variables.Root, ref formattedOutput);
+						clientShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
+					}
+
+					return true;
+				}
 			}
 			else
 			{
-				sourceShell.Receive("vars", "The vars command is not supported on this shell.");
-				return false;
+				return Error(sourceShell, "The vars command is not supported on this shell.");
 			}
 		}
 
@@ -76,6 +126,19 @@ namespace Client
 			}
 
 			return tabs;
+		}
+
+		/// <summary>
+		/// Displays an error message and returns the default error
+		/// value of false.
+		/// </summary>
+		/// <param name="shell">The shell to display the message on.</param>
+		/// <param name="message">The message to display.</param>
+		/// <returns>A constant value of false.</returns>
+		private bool Error(IShell shell, string message)
+		{
+			shell.Print("vars", @"\b\cf1Error:\b0\cf2\i  " + message);
+			return false;
 		}
 	}
 }

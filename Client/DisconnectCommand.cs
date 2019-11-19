@@ -51,7 +51,7 @@ namespace Client
 		/// </summary>
 		private bool Error(IShell sourceShell, string errorMessage)
 		{
-			sourceShell.Receive("disconnect", errorMessage);
+			sourceShell.Print("disconnect", errorMessage);
 			return false;
 		}
 	}

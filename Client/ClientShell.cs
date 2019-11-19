@@ -38,11 +38,18 @@ namespace Client
 			_socketThread = new Thread(() =>
 			{
 				_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+				_connection.Blocking = (bool)Variables["environment.blocking"];
+				_connection.ReceiveTimeout = (int)Variables["environment.timeout"];
+				_connection.SendTimeout = (int)Variables["environment.timeout"];
 				_connection.Connect(endPoint);
 
-				Receive(entityMachine, "Successfully connected to " + Remote);
+				Print(entityMachine, "Successfully connected to " + Remote);
 
-				// TODO: Write connection loop...
+				while (IsConnected)
+				{
+					SendAllMessages();
+					DisplayResponse();
+				}
 			});
 
 			_socketThread.Start();
@@ -55,7 +62,7 @@ namespace Client
 		{
 			if (IsConnected)
 			{
-				Receive(entityMachine, "Disconnected from " + Remote);
+				Print(entityMachine, "Disconnected from " + Remote);
 
 				_connection.Close();
 				_connection = null;
@@ -63,17 +70,73 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Attempts to retrieve data from the connection socket.
+		/// </summary>
+		/// <returns>True if any data was received, false otherwise.</returns>
+		public bool TryReceive(out string message)
+		{
+			message = null;
+
+			if (!IsConnected)
+			{
+				return false;
+			}
+
+			byte[] receivedBytes = new byte[BufferSize];
+			bool any = false;
+
+			while (_connection.Receive(receivedBytes) > 0)
+			{
+				message += Decode(receivedBytes);
+				any = true;
+			}
+
+			return any;
+		}
+
+		/// <summary>
+		/// Receives data from the connected socket.
+		/// </summary>
+		/// <returns>The received data. If the socket fails to receive anything, this will be null.</returns>
+		public string Receive()
+		{
+			if (TryReceive(out string receivedData))
+			{
+				return receivedData;
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Sends a message to the remote host.
+		/// </summary>
+		/// <param name="message">The message to send to the remote host.</param>
+		public void Send(string message)
+		{
+			if (!IsConnected)
+			{
+				return;
+			}
+
+			_messageQueue.Enqueue(message);
+		}
+
+		/// <summary>
 		/// Initialisation for the shell.
 		/// </summary>
 		protected override bool OnShellInit()
 		{
+			_messageQueue = new ConcurrentQueue<string>();
 			try
 			{
 				_enviromentVars = Variables.Load("../../Environment.vars");
 			}
 			catch (Exception e)
 			{
-				Receive(entityMachine, e.Message);
+				Print(entityMachine, e.Message);
 			}
 			return base.OnShellInit();
 		}
@@ -96,6 +159,52 @@ namespace Client
 			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Receives data from the connected socket and
+		/// displays it to the shell.
+		/// </summary>
+		private void DisplayResponse()
+		{
+			if (TryReceive(out string receivedData))
+			{
+				Print(entityHost, receivedData);
+			}
+		}
+
+		/// <summary>
+		/// Sends all messages stored in the message queue to the remote host.
+		/// </summary>
+		private void SendAllMessages()
+		{
+			while (!_messageQueue.IsEmpty && IsConnected)
+			{
+				string nextMessage;
+				while (!_messageQueue.TryDequeue(out nextMessage));
+				_connection.Send(Encode(nextMessage));
+			}
+		}
+
+		/// <summary>
+		/// Converts a string into an array of bytes for transferral across
+		/// a network.
+		/// </summary>
+		/// <param name="sourceString">The string to convert to an array of bytes.</param>
+		/// <returns>Array of bytes from the source string.</returns>
+		private byte[] Encode(string sourceString)
+		{
+			return Encoding.UTF8.GetBytes(sourceString);
+		}
+
+		/// <summary>
+		/// Converts a sequence of bytes into a readable string format.
+		/// </summary>
+		/// <param name="sourceBytes">The original byte array segment.</param>
+		/// <returns>A string composed of the original array of bytes.</returns>
+		private string Decode(byte[] sourceBytes)
+		{
+			return Encoding.UTF8.GetString(sourceBytes);
 		}
 
 		/// <summary>
@@ -129,6 +238,14 @@ namespace Client
 		private Socket _connection;
 		private Thread _socketThread;
 		private Variables _enviromentVars;
+		private ConcurrentQueue<string> _messageQueue;
+
+		// -- Network data --
+
+		/// <summary>
+		/// The agreed size of the buffer.
+		/// </summary>
+		private int BufferSize => (int)Variables["environment.buffer_size"];
 
 		// -- Entity management override --
 
