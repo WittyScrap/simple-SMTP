@@ -176,6 +176,7 @@ namespace Shell
 
 				// Start main window loop
 				Application.Run(this);
+				OnShellDestruction();
 			});
 
 			_formThread.Start();

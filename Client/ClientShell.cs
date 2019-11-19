@@ -69,10 +69,40 @@ namespace Client
 		{
 			if (IsConnected)
 			{
-				Print(entityMachine, "Disconnected from " + Remote);
+				string remote = Remote;
 
 				_connection.Shutdown(SocketShutdown.Both);
 				_connection.Close();
+				_connection = null;
+
+				Print(entityMachine, "Disconnected from " + remote);
+			}
+		}
+
+		/// <summary>
+		/// Attempts a single retrieval from the connected socket,
+		/// regardless of whether or not any more potential messages might be on the way.
+		/// </summary>
+		/// <returns>The amount of bytes received.</returns>
+		public int ReceiveOnce(byte[] buffer)
+		{
+			if (!IsConnected || _connection.Available == 0)
+			{
+				return 0;
+			}
+
+			for (int i = 0; i < buffer.Length; ++i)
+			{
+				buffer[i] = 0;
+			}
+
+			try
+			{
+				return _connection.Receive(buffer);
+			}
+			catch (SocketException)
+			{
+				return 0;
 			}
 		}
 
@@ -92,19 +122,10 @@ namespace Client
 			byte[] receivedBytes = new byte[BufferSize];
 			bool any = false;
 
-            try
+            while (IsConnected && ReceiveOnce(receivedBytes) > 0)
             {
-                while (IsConnected && _connection.Receive(receivedBytes) > 0)
-                {
-                    message += Decode(receivedBytes);
-                    any = true;
-                }
-            }
-            catch (SocketException)
-            {
-                // Likely a socket timed out, we may still have received useful data.
-				// If a connection has been abruptly interrupted, still return any data
-				// we may have retrieved prior to the connection ending.
+                message += Decode(receivedBytes);
+                any = true;
             }
 
 			return any;
@@ -158,6 +179,15 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Disconnect the shell and terminate all threads immediately.
+		/// </summary>
+		protected override void OnShellDestruction()
+		{
+			Disconnect();
+			base.OnShellDestruction();
+		}
+
+		/// <summary>
 		/// Receives data from the connected socket and
 		/// displays it to the shell.
 		/// </summary>
@@ -174,19 +204,22 @@ namespace Client
 		/// </summary>
 		private void SendAllMessages()
 		{
-			while (!_messageQueue.IsEmpty && IsConnected)
+			while (!_messageQueue.IsEmpty)
 			{
 				string nextMessage;
 				while (!_messageQueue.TryDequeue(out nextMessage));
 
-                try
-                {
-                    _connection.Send(Encode(nextMessage));
-                }
-                catch (SocketException e)
-                {
-                    Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
-                }
+				if (IsConnected)
+				{
+					try
+					{
+						_connection.Send(Encode(nextMessage));
+					}
+					catch (SocketException e)
+					{
+						Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+					}
+				}
             }
 		}
 
@@ -208,13 +241,37 @@ namespace Client
 		/// <returns>A string composed of the original array of bytes.</returns>
 		private string Decode(byte[] sourceBytes)
 		{
-			return Encoding.UTF8.GetString(sourceBytes);
+			return Encoding.UTF8.GetString(sourceBytes).Replace("\0", "");
 		}
 
 		/// <summary>
 		/// Tests if the socket has fully connected.
 		/// </summary>
-		public bool IsConnected => _connection != null && _connection.Connected;
+		public bool IsConnected {
+			get
+			{
+				if (_connection == null)
+				{
+					return false;
+				}
+
+				try
+				{
+					bool doesPoll = _connection.Poll(_connection.ReceiveTimeout, SelectMode.SelectRead);
+					bool anyAvail = _connection.Available != 0;
+
+					return (!doesPoll || anyAvail) && _connection.Connected;
+				}
+				catch (ObjectDisposedException)
+				{
+					return false;
+				}
+				catch (NullReferenceException)
+				{
+					return false;
+				}
+			}
+		}
 
 		/// <summary>
 		/// Accessor for the environmental variables.
