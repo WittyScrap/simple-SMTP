@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.Net.Sockets;
 using Shell;
 using System.Net;
+using VariableManagement;
 
 namespace Client
 {
@@ -62,6 +63,22 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Initialisation for the shell.
+		/// </summary>
+		protected override bool OnShellInit()
+		{
+			try
+			{
+				_enviromentVars = Variables.Load("../../Environment.vars");
+			}
+			catch (Exception e)
+			{
+				Receive(entityMachine, e.Message);
+			}
+			return base.OnShellInit();
+		}
+
+		/// <summary>
 		/// Tests a connection on a given host and port.
 		/// </summary>
 		private bool TestConnection(string host, int port)
@@ -87,6 +104,11 @@ namespace Client
 		public bool IsConnected => _connection != null && _connection.Connected;
 
 		/// <summary>
+		/// Accessor for the environmental variables.
+		/// </summary>
+		public Variables Variables => _enviromentVars;
+
+		/// <summary>
 		/// Information on the remote host this shell is
 		/// connected to.
 		/// </summary>
@@ -106,6 +128,7 @@ namespace Client
 
 		private Socket _connection;
 		private Thread _socketThread;
+		private Variables _enviromentVars;
 
 		// -- Entity management override --
 

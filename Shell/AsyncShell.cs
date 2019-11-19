@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 // Disambiguations
 using Timer = System.Windows.Forms.Timer;
-
+using System.Text.RegularExpressions;
 
 namespace Shell
 {
@@ -110,6 +110,7 @@ namespace Shell
 		/// <param name="command">The command to send to the remote host.</param>
 		public async void SendCommand(string command)
 		{
+			command = Sanitise(command);
 			if (!ParseCommand(command, out var parsedCommand))
 			{
 				string error;
@@ -162,6 +163,8 @@ namespace Shell
 
 			_formThread = new Thread(() =>
 			{
+				output.SelectionTabs = new int[] { 20, 40, 80, 120 };
+
 				Show();
 				_tickManager = new Timer();
 				_tickManager.Interval = 10; // 10ms
@@ -241,6 +244,15 @@ namespace Shell
 		}
 
 		/// <summary>
+		/// Sanitises the user input to make it safe for
+		/// rtf formatting.
+		/// </summary>
+		private string Sanitise(string input)
+		{
+			return Regex.Replace(input, @"\{\*?\\[^{}]+}|[{}]|\\\n?[A-Za-z]+\n?(?:-?\d+)?[ ]?", "");
+		}
+
+		/// <summary>
 		/// Parses a command into a header and a set of keys and values
 		/// for argument names and values.
 		/// </summary>
@@ -252,7 +264,7 @@ namespace Shell
 		{
 			parsedCommand.header = "";
 			parsedCommand.args = null;
-			string[] components = command.Split(' ');
+			string[] components = command.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Check for a header
 			if (components.Length == 0 || components[0][0] == '-')

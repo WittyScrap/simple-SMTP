@@ -57,14 +57,20 @@
     <Compile Include="DisconnectCommand.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VarsCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Environment.vars" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shell\Shell.csproj">
       <Project>{38d6994c-c74f-4602-84f7-c12632dc44c3}</Project>
       <Name>Shell</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Vars\Vars.csproj">
+      <Project>{213db845-43f8-4564-8f14-dc23284b58df}</Project>
+      <Name>Vars</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

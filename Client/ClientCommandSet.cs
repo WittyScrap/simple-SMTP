@@ -23,6 +23,7 @@ namespace Client
 
 			// Save commands
 			_commands["help"]		= new HelpCommand();
+			_commands["vars"]		= new VarsCommand();
 			_commands["connect"]	= new ConnectCommand();
 			_commands["disconnect"] = new DisconnectCommand();
 		}
