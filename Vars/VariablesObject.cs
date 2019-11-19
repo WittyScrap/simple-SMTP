@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace VariableManagement
 {
@@ -86,6 +87,29 @@ namespace VariableManagement
 			{
 				yield return fieldsEnumerator.Current;
 			}
+		}
+
+		/// <summary>
+		/// Updates the value of a field through its name.
+		/// </summary>
+		/// <param name="fieldName">The name of the field to update.</param>
+		/// <param name="newValue">The new value for the field, note that this MUST be the same type as the previous value.</param>
+		public void SetFieldValue(string fieldName, object newValue)
+		{
+			if (!_fields.ContainsKey(fieldName))
+			{
+				throw new Exception("Key " + fieldName + " does not exist!");
+			}
+
+			if (_fields[fieldName].GetType() != newValue.GetType())
+			{
+				throw new Exception("Error: Could not assign " + newValue.GetType() + " value of " +
+									newValue.ToString() + " to field " + fieldName + " of type " +
+									_fields[fieldName].GetType() + "!");
+			}
+
+			// Assign new value...
+			_fields[fieldName] = newValue;
 		}
 
 		/* ------------ */

@@ -44,6 +44,24 @@ namespace VariableManagement
 
 				return previous.GetField(components.Dequeue());
 			}
+			set
+			{
+				Queue<string> components = new Queue<string>(key.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries));
+				VariablesObject previous = Root;
+
+				while (components.Count > 1)
+				{
+					string nextkey = components.Dequeue();
+					previous = previous.GetObject(nextkey);
+
+					if (previous == null)
+					{
+						throw new Exception("Key " + nextkey + " does not exist in object " + this + "!");
+					}
+				}
+
+				previous.SetFieldValue(components.Dequeue(), value);
+			}
 		}
 
 		/// <summary>

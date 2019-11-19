@@ -10,7 +10,7 @@ namespace VariableManagement
 	/// Class enabled to parse a vars object from a set
 	/// of tokens.
 	/// </summary>
-	internal class VariablesParser
+	public class VariablesParser
 	{
 		/// <summary>
 		/// The current state of the parser.
@@ -181,7 +181,7 @@ namespace VariableManagement
 		/// <param name="token">The raw string token.</param>
 		/// <param name="parsed">The parsed object type.</param>
 		/// <returns>True of the token can be parsed into any of the known object types, false otherwise.</returns>
-		private bool TryParse(string token, out object parsed)
+		public static bool TryParse(string token, out object parsed)
 		{
 			parsed = null;
 
@@ -194,8 +194,7 @@ namespace VariableManagement
 			{
 				parsed = intValue;
 			}
-
-			if (float.TryParse(token, out float floatValue))
+            else if (float.TryParse(token, out float floatValue))
 			{
 				parsed = floatValue;
 			}

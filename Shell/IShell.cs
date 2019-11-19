@@ -31,7 +31,7 @@ namespace Shell
 		/// Handles receiving a string output to display to the console.
 		/// </summary>
 		/// <param name="output">The output that has been received.</param>
-		void Receive(string source, string output);
+		void Print(string source, string output);
 
 		/// <summary>
 		/// Displays the help screen.

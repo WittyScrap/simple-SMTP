@@ -68,6 +68,7 @@ namespace Shell
 		public void AppendOutput(string rtf)
 		{
 			output.SelectedRtf = rtf;
+			output.ScrollToCaret();
 		}
 
 		/// <summary>
@@ -91,7 +92,7 @@ namespace Shell
 			}
 			else
 			{
-				Receive(entityMachine, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
+				Print(entityMachine, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
 			}
 		}
 
@@ -111,11 +112,11 @@ namespace Shell
 		public async void SendCommand(string command)
 		{
 			command = Sanitise(command);
-			if (!ParseCommand(command, out var parsedCommand))
+			if (!ParseCommand(command, out string header, out ParameterSet args))
 			{
 				string error;
 
-				if (!string.IsNullOrEmpty(parsedCommand.header))
+				if (!string.IsNullOrEmpty(header))
 				{
 					error = "Invalid format.";
 				}
@@ -124,14 +125,14 @@ namespace Shell
 					error = "No command detected, note that commands cannot be prefixed by - or --.";
 				}
 
-				Receive(entityUser, command);
-				Receive(entityMachine, @"Error: \i " + error + @"\i0");
+				Print(entityUser, command);
+				Print(entityMachine, @"Error: \i " + error + @"\i0");
 			}
 			else
 			{
 				SetActive(false);
-				Receive(entityUser, GetCommandFormat(parsedCommand.header, parsedCommand.args));
-				Task commandTask = Task.Run(() => OnCommandSend(parsedCommand.header, parsedCommand.args));
+				Print(entityUser, GetCommandFormat(header, args));
+				Task commandTask = Task.Run(() => OnCommandSend(header, args));
 				await commandTask;
 				SetActive(true);
 			}
@@ -141,11 +142,11 @@ namespace Shell
 		/// Handles receiving some output that needs to be displayed to the console.
 		/// </summary>
 		/// <param name="output">The output to be displayed.</param>
-		public void Receive(string source, string output)
+		public void Print(string source, string output)
 		{
 			output = OnOutputReceive(source, output);
 			string rtf = @"{\rtf1\ansi {\colortbl ;\red255\green255\blue255;\red204\green204\blue204;\red0\green255\blue0;}\b "
-						   + source + @"\b0: " + output + @"\line}";
+						   + source + @"\b0: " + output + @"\b0\i0\cf3\line}";
 			EnqueueCommand(() => AppendOutput(rtf));
 		}
 
@@ -196,7 +197,7 @@ namespace Shell
 				EnqueueCommand(() => OnInput += SendCommand);
 				EnqueueCommand(() => SetActive(true));
 
-				Receive(entityMachine, @"Console ready, type \i help \i0 for more information.");
+				Print(entityMachine, @"Console ready, type \i help \i0 for more information.");
 				return true;
 			}
 			else
@@ -249,7 +250,7 @@ namespace Shell
 		/// </summary>
 		private string Sanitise(string input)
 		{
-			return Regex.Replace(input, @"\{\*?\\[^{}]+}|[{}]|\\\n?[A-Za-z]+\n?(?:-?\d+)?[ ]?", "");
+			return Regex.Replace(input.Replace("\\", ""), @"\{\*?\\[^{}]+}|[{}]|\\\n?[A-Za-z]+\n?(?:-?\d+)?[ ]?", "");
 		}
 
 		/// <summary>
@@ -260,10 +261,10 @@ namespace Shell
 		/// <param name="header">The extrapolated header.</param>
 		/// <param name="args">The argument list.</param>
 		/// <returns>True if the command could be parsed, false if the command has errors.</returns>
-		private bool ParseCommand(string command, out (string header, ParameterSet args) parsedCommand)
+		private bool ParseCommand(string command, out string header, out ParameterSet args)
 		{
-			parsedCommand.header = "";
-			parsedCommand.args = null;
+			header = "";
+			args = null;
 			string[] components = command.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Check for a header
@@ -273,7 +274,7 @@ namespace Shell
 			}
 
 			// Header detected!
-			parsedCommand.header = components[0];
+			header = components[0];
 
 			if (components.Length == 1) // No arguments...
 			{
@@ -282,7 +283,7 @@ namespace Shell
 			}
 
 			components = components.Skip(1).ToArray();
-			parsedCommand.args = new ParameterSet();
+			args = new ParameterSet();
 
 			for (int arg = 0; arg < components.Length; ++arg)
 			{
@@ -296,7 +297,7 @@ namespace Shell
 						arg_val = components[++arg];
 					}
 
-					parsedCommand.args.Add(new CommandArg(arg_name, arg_val));
+					args.Add(new CommandArg(arg_name, arg_val));
 				}
 				else
 				{
@@ -462,7 +463,7 @@ namespace Shell
 				format += @"\line " + command.Help;
 			}
 
-			Receive(entityMachine, format);
+			Print(entityMachine, format);
 		}
 
 		/// <summary>

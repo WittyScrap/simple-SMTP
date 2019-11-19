@@ -26,24 +26,31 @@ namespace Client
 		/// <param name="port">The port number to connect to.</param>
 		public void Connect(string host, int port)
 		{
-			IPHostEntry ipHost = Dns.GetHostEntry(host);
-			IPAddress ipAddress = ipHost.AddressList[0];
-			IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
-
-			if (!TestConnection(host, port))
+			if (!IPAddress.TryParse(host, out IPAddress ipAddress))
 			{
-				throw new Exception("Could not connect to the specified host on the specified port.");
+				IPHostEntry ipHost = Dns.GetHostEntry(host);
+				ipAddress = ipHost.AddressList[0];
 			}
+
+			IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
 
 			_socketThread = new Thread(() =>
 			{
-				_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-				_connection.Blocking = (bool)Variables["environment.blocking"];
-				_connection.ReceiveTimeout = (int)Variables["environment.timeout"];
-				_connection.SendTimeout = (int)Variables["environment.timeout"];
-				_connection.Connect(endPoint);
+				try
+				{
+					_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+					_connection.ReceiveTimeout = (int)Variables["environment.timeout"];
+					_connection.SendTimeout = (int)Variables["environment.timeout"];
+					_connection.Connect(endPoint);
+				}
+				catch (SocketException e)
+				{
+					Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+					_connection = null;
+					return;
+				}
 
-				Print(entityMachine, "Successfully connected to " + Remote);
+                Print(entityMachine, "Successfully connected to " + Remote);
 
 				while (IsConnected)
 				{
@@ -64,8 +71,8 @@ namespace Client
 			{
 				Print(entityMachine, "Disconnected from " + Remote);
 
+				_connection.Shutdown(SocketShutdown.Both);
 				_connection.Close();
-				_connection = null;
 			}
 		}
 
@@ -85,11 +92,20 @@ namespace Client
 			byte[] receivedBytes = new byte[BufferSize];
 			bool any = false;
 
-			while (_connection.Receive(receivedBytes) > 0)
-			{
-				message += Decode(receivedBytes);
-				any = true;
-			}
+            try
+            {
+                while (IsConnected && _connection.Receive(receivedBytes) > 0)
+                {
+                    message += Decode(receivedBytes);
+                    any = true;
+                }
+            }
+            catch (SocketException)
+            {
+                // Likely a socket timed out, we may still have received useful data.
+				// If a connection has been abruptly interrupted, still return any data
+				// we may have retrieved prior to the connection ending.
+            }
 
 			return any;
 		}
@@ -142,26 +158,6 @@ namespace Client
 		}
 
 		/// <summary>
-		/// Tests a connection on a given host and port.
-		/// </summary>
-		private bool TestConnection(string host, int port)
-		{
-			using (TcpClient temp = new TcpClient())
-			{
-				try
-				{
-					temp.Connect(host, port);
-				}
-				catch (Exception)
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		/// <summary>
 		/// Receives data from the connected socket and
 		/// displays it to the shell.
 		/// </summary>
@@ -182,8 +178,16 @@ namespace Client
 			{
 				string nextMessage;
 				while (!_messageQueue.TryDequeue(out nextMessage));
-				_connection.Send(Encode(nextMessage));
-			}
+
+                try
+                {
+                    _connection.Send(Encode(nextMessage));
+                }
+                catch (SocketException e)
+                {
+                    Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+                }
+            }
 		}
 
 		/// <summary>
