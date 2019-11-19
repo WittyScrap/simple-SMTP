@@ -162,6 +162,9 @@ namespace Shell
 			_inputHistory = new LinkedList<string>();
 			var consoleCreated = new ManualResetEvent(false);
 
+			Width = width;
+			Height = height;
+
 			_formThread = new Thread(() =>
 			{
 				output.SelectionTabs = new int[] { 20, 40, 80, 120 };

@@ -18,7 +18,7 @@ namespace Client
         static void Main(string[] args)
         {
 			ClientShell shell = new ClientShell();
-			shell.Create(800, 600);
+			shell.Create(1000, 600);
 			shell.Run();
         }
     }
