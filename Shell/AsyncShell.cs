@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -269,7 +269,7 @@ namespace Shell
 		{
 			header = "";
 			args = null;
-			string[] components = command.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			string[] components = command.Split(new char[] { ' ' });
 
 			// Check for a header
 			if (components.Length == 0 || components[0][0] == '-')
@@ -291,14 +291,22 @@ namespace Shell
 
 			for (int arg = 0; arg < components.Length; ++arg)
 			{
+                if (components[arg] == "")
+                {
+                    continue;
+                }
+
 				string arg_key = components[arg];
 				string arg_val = null;
 
 				if (ExtractArgument(arg_key, out string arg_name))
 				{
-					if (arg + 1 < components.Length && !ExtractArgument(components[arg + 1], out string _))
+					if (arg + 1 < components.Length && !SearchArgumentFrom(ref components, arg + 1))
 					{
-						arg_val = components[++arg];
+						if (!ParseValue(out arg_val, ref components, ref arg))
+                        {
+                            return false;
+                        }
 					}
 
 					args.Add(new CommandArg(arg_name, arg_val));
@@ -311,6 +319,75 @@ namespace Shell
 
 			return true;
 		}
+
+        /// <summary>
+        /// Searches for a valid argument in the components list.
+        /// </summary>
+        /// <param name="components">Where to search for the argument.</param>
+        /// <param name="startIndex">Where to begin searching for an argument.</param>
+        /// <returns>True if the first occurrence is an argument, false if it is a value.</returns>
+        private bool SearchArgumentFrom(ref string[] components, int startIndex)
+        {
+            while (startIndex < components.Length)
+            {
+                if (components[startIndex] != "")
+                {
+                    // Only one character, cannot be an argument.
+                    if (components[startIndex].Length == 1)
+                    {
+                        return false;
+                    }
+
+                    if (components[startIndex][0] == '-' && components[startIndex].Length == 2 ||
+                        components[startIndex][0] == '-' && components[startIndex][1] == '-')
+                    {
+                        return true;
+                    }
+                }
+
+                startIndex++;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Keeps reading through the components until it finds an end of string.
+        /// </summary>
+        /// <param name="arg_val">The parsed value for the argument.</param>
+        /// <param name="components">The list of argument components.</param>
+        /// <param name="startIndex">The starting index to read from.</param>
+        private bool ParseValue(out string arg_val, ref string[] components, ref int startIndex)
+        {
+            arg_val = "";
+
+            while (arg_val == "" && startIndex + 1 < components.Length)
+            {
+                arg_val = components[++startIndex];
+            }
+
+            if (arg_val[0] == '"')
+            {
+                // Remove first "
+                arg_val = arg_val.Substring(1, arg_val.Length - 1);
+                string next_val = arg_val;
+                
+                while (next_val == "" || next_val[next_val.Length - 1] != '"')
+                {
+                    if (++startIndex >= components.Length)
+                    {
+                        return false;
+                    }
+
+                    arg_val += " " + (next_val = components[startIndex]); 
+                }
+
+                // Remove last "
+                arg_val = arg_val.Substring(0, arg_val.Length - 1);
+            }
+
+            return arg_val != "";
+        }
 
 		/// <summary>
 		/// Extracts the argument name from a key in either format:
