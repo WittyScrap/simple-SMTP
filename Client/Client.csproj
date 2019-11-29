@@ -55,6 +55,12 @@
     </Compile>
     <Compile Include="ConnectCommand.cs" />
     <Compile Include="DisconnectCommand.cs" />
+    <Compile Include="Multiline.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Multiline.Designer.cs">
+      <DependentUpon>Multiline.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SendCommand.cs" />
@@ -73,6 +79,11 @@
       <Project>{213db845-43f8-4564-8f14-dc23284b58df}</Project>
       <Name>Vars</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Multiline.resx">
+      <DependentUpon>Multiline.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

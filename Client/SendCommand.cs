@@ -15,7 +15,7 @@ namespace Client
 		/// <summary>
 		/// Displayed in the help page of the shell.
 		/// </summary>
-		public string Help => @"\cf1\b send \b0\cf2\i <--data/-d\cf3\i0  message\cf2\i >\i0\b\cf1 :\b0\cf2\i  Sends a message to a remote connected host.\i0";
+		public string Help => @"\cf1\b send \b0\cf2\i <--data/-d\cf3\i0 | \cf2\i --block/-b\cf3\i0 message\cf2\i >\i0\b\cf1 :\b0\cf2\i  Sends a message to a remote connected host.\i0";
 
 		/// <summary>
 		/// Sends a message to the remote connected host.
@@ -34,12 +34,28 @@ namespace Client
 					return Error(clientShell, "Invalid argument count.");
 				}
 
-				if (!args.Either(out object messagePacked, "d", "data"))
+                bool hasData    = args.Either(out object packedMessage, "data", "d");
+                bool wantsBlock = args.Either(out object _, "block", "b");
+
+				if (!hasData && !wantsBlock)
 				{
-					return Error(clientShell, "Missing data argument, please refer to the help screen for more information.");
+					return Error(clientShell, "Missing data/block argument, please refer to the help screen for more information.");
 				}
 
-				string message = (string)messagePacked;
+                string message = "";
+
+                if (hasData)
+                {
+                    message = (string)packedMessage;
+                }
+                else
+                {
+                    Multiline form = new Multiline();
+                    form.ShowDialog();
+
+                    // Form has finished...
+                    message = form.Value;
+                }
 
 				try
 				{
