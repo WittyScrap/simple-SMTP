@@ -37,5 +37,10 @@ namespace Shell
 		/// Displays the help screen.
 		/// </summary>
 		void DisplayHelp();
+
+        /// <summary>
+        /// Clears the console.
+        /// </summary>
+        void Clear();
     }
 }

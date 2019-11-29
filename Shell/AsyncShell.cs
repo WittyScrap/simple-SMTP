@@ -345,6 +345,10 @@ namespace Shell
                     {
                         return startIndex + 1;
                     }
+                    else
+                    {
+                        return -1;
+                    }
                 }
 
                 startIndex++;
@@ -607,14 +611,22 @@ namespace Shell
 			}
 		}
 
+        /// <summary>
+        /// Clears the shell.
+        /// </summary>
+        public void Clear()
+        {
+            EnqueueCommand(() => output.Clear());
+        }
 
-		/* ------------ */
-		/* --- Data --- */
-		/* ------------ */
 
-		// -- Shell management -- //
+        /* ------------ */
+        /* --- Data --- */
+        /* ------------ */
 
-		private ConcurrentQueue<Action> _windowCommandQueue;
+        // -- Shell management -- //
+
+        private ConcurrentQueue<Action> _windowCommandQueue;
 		private LinkedListNode<string> _historyPlace;
 		private LinkedList<string> _inputHistory;
 		private TCommandSet _commandSet;
