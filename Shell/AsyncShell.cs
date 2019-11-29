@@ -301,7 +301,9 @@ namespace Shell
 
 				if (ExtractArgument(arg_key, out string arg_name))
 				{
-					if (arg + 1 < components.Length && !SearchArgumentFrom(ref components, arg + 1))
+                    int skipTo = SearchArgumentFrom(ref components, arg + 1);
+
+					if (arg + 1 < components.Length && skipTo == -1)
 					{
 						if (!ParseValue(out arg_val, ref components, ref arg))
                         {
@@ -326,7 +328,7 @@ namespace Shell
         /// <param name="components">Where to search for the argument.</param>
         /// <param name="startIndex">Where to begin searching for an argument.</param>
         /// <returns>True if the first occurrence is an argument, false if it is a value.</returns>
-        private bool SearchArgumentFrom(ref string[] components, int startIndex)
+        private int SearchArgumentFrom(ref string[] components, int startIndex)
         {
             while (startIndex < components.Length)
             {
@@ -335,20 +337,20 @@ namespace Shell
                     // Only one character, cannot be an argument.
                     if (components[startIndex].Length == 1)
                     {
-                        return false;
+                        return -1;
                     }
 
                     if (components[startIndex][0] == '-' && components[startIndex].Length == 2 ||
                         components[startIndex][0] == '-' && components[startIndex][1] == '-')
                     {
-                        return true;
+                        return startIndex + 1;
                     }
                 }
 
                 startIndex++;
             }
 
-            return false;
+            return -1;
         }
 
         /// <summary>
