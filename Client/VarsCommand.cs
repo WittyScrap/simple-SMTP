@@ -27,6 +27,11 @@ namespace Client
 			{
 				ClientShell clientShell = sourceShell as ClientShell;
 
+				if (clientShell.Variables == null)
+				{
+					return Error(clientShell, "Variables could not be parsed, please check the environment.vars file for errors.");
+				}
+
 				object variableNameBoxed = null;
 				bool hasSet = args != null && args.Either(out variableNameBoxed, "s", "set");
 
@@ -100,7 +105,7 @@ namespace Client
 			// First all of the values...
 			foreach (var varsField in root.GetAllFields())
 			{
-				formatOutput += @"\line" + tabs + @"+ \cf1\b " + varsField.Key + @":\b0\i\cf2  " + varsField.Value.ToString() + @"\i0";
+				formatOutput += @"\line" + tabs + @"\cf1\b " + varsField.Key + @":\b0\i\cf2  " + varsField.Value.ToString() + @"\i0";
 			}
 
 			// Then, recursively, all of the sub objects as well...
@@ -122,7 +127,7 @@ namespace Client
 
 			while (tabsCount-- > 0)
 			{
-				tabs += @"\tab";
+				tabs += "    ";
 			}
 
 			return tabs;

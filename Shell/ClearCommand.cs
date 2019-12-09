@@ -14,7 +14,7 @@ namespace Shell
         /// <summary>
         /// The messsage displayed in the help screen.
         /// </summary>
-        public string Help => @"\cf1\b clear: \b0\i\cf2 Clears the console.\i0\b0\cf3";
+        public string Help => Format.Name("clear") + Format.Text("Clears the console.");
 
         /// <summary>
         /// Clear the console as per instruction.

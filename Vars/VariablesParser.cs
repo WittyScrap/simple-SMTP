@@ -100,7 +100,7 @@ namespace VariableManagement
 						else
 						{
 							throw new Exception(@"\cf1\b Parsing error:\b0\cf2\i  unsupported type for value " + previousName
-											  + @", the only supported types are bool, float, and int.\i0\cf3");
+											  + @", the only supported types are bool, float, string, and int.\i0\cf3");
 						}
 						break;
 					}
@@ -189,8 +189,7 @@ namespace VariableManagement
 			{
 				parsed = token == "true" ? true : false;
 			}
-
-			if (int.TryParse(token, out int intValue))
+			else if (int.TryParse(token, out int intValue))
 			{
 				parsed = intValue;
 			}
@@ -198,6 +197,11 @@ namespace VariableManagement
 			{
 				parsed = floatValue;
 			}
+			else // Assume string
+			{
+				parsed = '"' + token + '"';
+			}
+
 
 			return parsed != null;
 		}

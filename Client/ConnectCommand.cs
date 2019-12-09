@@ -19,7 +19,7 @@ namespace Client
 		public string Help {
 			get
 			{
-				return @"\cf1\b connect\b0\cf2\i  <-h/--host\i0\cf3  host_name\cf2\i> <-p/--port\i0\cf3  port\i\cf2 >\i0\cf1\b :\b0\cf2\i  Connects the shell to the remote host on the defined port.\i0\cf3";
+				return Format.Name("connect", new Arg("host", "host_name", 'h'), new Arg("port", "port_number", 'p')) + Format.Text("Connects the shell to the remote host on the defined port.");
 			}
 		}
 

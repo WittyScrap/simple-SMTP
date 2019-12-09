@@ -17,7 +17,7 @@ namespace Shell
 		public string Help {
 			get
 			{
-				return @"\cf1\b help\b0 : \cf2\i Displays this help screen.\i0\cf3";
+				return Format.Name("help") + Format.Text("Displays this help screen.");
 			}
 		}
 

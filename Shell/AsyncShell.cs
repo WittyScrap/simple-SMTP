@@ -301,11 +301,11 @@ namespace Shell
 
 				if (ExtractArgument(arg_key, out string arg_name))
 				{
-                    int skipTo = SearchArgumentFrom(ref components, arg + 1);
+                    int skipTo = SearchArgumentFrom(components, arg + 1);
 
 					if (arg + 1 < components.Length && skipTo == -1)
 					{
-						if (!ParseValue(out arg_val, ref components, ref arg))
+						if (!ParseValue(out arg_val, components, ref arg))
                         {
                             return false;
                         }
@@ -328,7 +328,7 @@ namespace Shell
         /// <param name="components">Where to search for the argument.</param>
         /// <param name="startIndex">Where to begin searching for an argument.</param>
         /// <returns>True if the first occurrence is an argument, false if it is a value.</returns>
-        private int SearchArgumentFrom(ref string[] components, int startIndex)
+        private int SearchArgumentFrom(string[] components, int startIndex)
         {
             while (startIndex < components.Length)
             {
@@ -363,7 +363,7 @@ namespace Shell
         /// <param name="arg_val">The parsed value for the argument.</param>
         /// <param name="components">The list of argument components.</param>
         /// <param name="startIndex">The starting index to read from.</param>
-        private bool ParseValue(out string arg_val, ref string[] components, ref int startIndex)
+        private bool ParseValue(out string arg_val, string[] components, ref int startIndex)
         {
             arg_val = "";
 
@@ -461,10 +461,15 @@ namespace Shell
 
 				commandFormat += @"\cf2\i " + key + @"\i0\cf3  ";
 
-				if (val != null)
+				if (val == null)
 				{
-					commandFormat += val.ToString() + " ";
+					continue;
 				}
+
+				string value = val.ToString();
+				string quote = value.Contains(" ") ? "\"" : "";
+
+				commandFormat += quote + value + quote + " ";
 			}
 
 			return commandFormat;

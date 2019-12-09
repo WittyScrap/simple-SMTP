@@ -52,6 +52,7 @@
     </Compile>
     <Compile Include="ClearCommand.cs" />
     <Compile Include="CommandArg.cs" />
+    <Compile Include="CommandFormatter.cs" />
     <Compile Include="HelpCommand.cs" />
     <Compile Include="ICommand.cs" />
     <Compile Include="ICommandSet.cs" />

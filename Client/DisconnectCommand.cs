@@ -19,7 +19,7 @@ namespace Client
 		public string Help {
 			get
 			{
-				return @"\cf1\b disconnect:\b0\cf2\i  Disconnects the shell from the remote host, if it is connected.\i0\cf3";
+				return Format.Name("disconnect") + Format.Text("Disconnects this shell from the remote host, if a connection exists.");
 			}
 		}
 
