@@ -19,9 +19,14 @@ namespace Client
 		public string Help {
 			get
 			{
-				return Format.Name("connect", new Arg("host", "host_name", 'h'), new Arg("port", "port_number", 'p')) + Format.Text("Connects the shell to the remote host on the defined port.");
+				return Format.Name(Name, new Arg("host", "host_name", 'h'), new Arg("port", "port_number", 'p')) + Format.Text("Connects the shell to the remote host on the defined port.");
 			}
 		}
+
+		/// <summary>
+		/// The name of this command.
+		/// </summary>
+		public string Name => "connect";
 
 		/// <summary>
 		/// Executes this command and connects the shell appropriately.

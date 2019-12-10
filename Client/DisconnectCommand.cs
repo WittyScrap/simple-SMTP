@@ -19,9 +19,14 @@ namespace Client
 		public string Help {
 			get
 			{
-				return Format.Name("disconnect") + Format.Text("Disconnects this shell from the remote host, if a connection exists.");
+				return Format.Name(Name) + Format.Text("Disconnects this shell from the remote host, if a connection exists.");
 			}
 		}
+
+		/// <summary>
+		/// The name of this command.
+		/// </summary>
+		public string Name => "disconnect";
 
 		/// <summary>
 		/// Safely disconnect the shell from the remote host.

@@ -17,9 +17,14 @@ namespace Shell
 		public string Help {
 			get
 			{
-				return Format.Name("help") + Format.Text("Displays this help screen.");
+				return Format.Name(Name) + Format.Text("Displays this help screen.");
 			}
 		}
+
+		/// <summary>
+		/// The name of this command.
+		/// </summary>
+		public string Name => "help";
 
 		/// <summary>
 		/// Asks the console to display the help screen.

@@ -12,7 +12,7 @@ namespace Client
 	/// Set of commands for the client-side of the
 	/// system.
 	/// </summary>
-	public class ClientCommandSet : ICommandSet
+	public class ClientCommandSet : IExpandableCommandSet
 	{
 		/// <summary>
 		/// Saves all related commands.
@@ -28,6 +28,7 @@ namespace Client
 			_commands["connect"]	= new ConnectCommand();
 			_commands["send"]		= new SendCommand();
 			_commands["disconnect"] = new DisconnectCommand();
+			_commands["load"]		= new LoadCommand<ClientCommandSet>();
 		}
 
 		/// <summary>
@@ -122,6 +123,21 @@ namespace Client
 		IEnumerator<KeyValuePair<string, ICommand>> IEnumerable<KeyValuePair<string, ICommand>>.GetEnumerator()
 		{
 			return _commands.GetEnumerator();
+		}
+
+		/// <summary>
+		/// Expands this command set.
+		/// </summary>
+		/// <param name="commandName">The name of the command to be added.</param>
+		/// <param name="command">The command to be added.</param>
+		public void Expand(string commandName, ICommand command)
+		{
+			if (_commands.ContainsKey(commandName))
+			{
+				throw new ArgumentException("Command already has a name for: " + commandName);
+			}
+
+			_commands[commandName] = command;
 		}
 
 

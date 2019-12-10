@@ -14,7 +14,12 @@ namespace Shell
         /// <summary>
         /// The messsage displayed in the help screen.
         /// </summary>
-        public string Help => Format.Name("clear") + Format.Text("Clears the console.");
+        public string Help => Format.Name(Name) + Format.Text("Clears the console.");
+
+        /// <summary>
+        /// The name of this command.
+        /// </summary>
+        public string Name => "clear";
 
         /// <summary>
         /// Clear the console as per instruction.

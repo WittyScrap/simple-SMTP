@@ -15,7 +15,12 @@ namespace Client
 		/// <summary>
 		/// Displayed in the help page of the shell.
 		/// </summary>
-		public string Help => @"\cf1\b send \b0\cf2\i <--data/-d\cf1\i0  | \cf2\i --block/-b\cf3\i0  message\cf2\i >\i0\b\cf1 :\b0\cf2\i  Sends a message to a remote connected host.\i0";
+		public string Help => @"\cf1\b " + Name + @" \b0\cf2\i <--data/-d\cf1\i0  | \cf2\i --block/-b\cf3\i0  message\cf2\i >\i0\b\cf1 :\b0\cf2\i  Sends a message to a remote connected host.\i0";
+
+		/// <summary>
+		/// The name of this command.
+		/// </summary>
+		public string Name => "send";
 
 		/// <summary>
 		/// Sends a message to the remote connected host.

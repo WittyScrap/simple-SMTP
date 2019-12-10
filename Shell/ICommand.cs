@@ -24,5 +24,10 @@ namespace Shell
 		/// The help summary for this command.
 		/// </summary>
 		string Help { get; }
+
+		/// <summary>
+		/// The name of the command.
+		/// </summary>
+		string Name { get; }
 	}
 }

@@ -625,9 +625,16 @@ namespace Shell
         }
 
 
-        /* ------------ */
-        /* --- Data --- */
-        /* ------------ */
+		/* ------------ */
+		/* --- Data --- */
+		/* ------------ */
+
+		// -- Command accessor -- //
+
+		/// <summary>
+		/// The list of commands associated with this shell.
+		/// </summary>
+		public TCommandSet Commands => _commandSet;
 
         // -- Shell management -- //
 

@@ -55,6 +55,7 @@
     </Compile>
     <Compile Include="ConnectCommand.cs" />
     <Compile Include="DisconnectCommand.cs" />
+    <Compile Include="LoadCommand.cs" />
     <Compile Include="Multiline.cs">
       <SubType>Form</SubType>
     </Compile>

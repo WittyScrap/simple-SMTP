@@ -16,7 +16,12 @@ namespace Client
 		/// <summary>
 		/// Displays the help section for this command.
 		/// </summary>
-		public string Help => @"\cf1\b vars \b0\cf2\i [--set/-s\cf3\i0  var_name\cf2\i  <--value/-v\cf3\i0  var_value\cf2\i > [--show]]\i0\b\cf1 :\b0\cf2\i  Displays all environmental variables as currently loaded in memory.\i0";
+		public string Help => @"\cf1\b " + Name + @" \b0\cf2\i [--set/-s\cf3\i0  var_name\cf2\i  <--value/-v\cf3\i0  var_value\cf2\i > [--show]]\i0\b\cf1 :\b0\cf2\i  Displays all environmental variables as currently loaded in memory.\i0";
+
+		/// <summary>
+		/// The name of this command.
+		/// </summary>
+		public string Name => "vars";
 
 		/// <summary>
 		/// Displays all environmental variables.
