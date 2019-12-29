@@ -37,8 +37,8 @@ namespace Client
 					return Error(clientShell, "Variables could not be parsed, please check the environment.vars file for errors.");
 				}
 
-				object variableNameBoxed = null;
-				bool hasSet = args != null && args.Either(out variableNameBoxed, "s", "set");
+				string variableName = null;
+				bool hasSet = args != null && args.Either(out variableName, "s", "set");
 
 				if (!hasSet)
 				{
@@ -51,21 +51,18 @@ namespace Client
 				}
 				else
 				{
-					if (variableNameBoxed == null)
+					if (variableName == null)
 					{
 						return Error(clientShell, "Incomplete vars command: set flag was found, but no variable name was provided.");
 					}
 
-					bool hasValue = args.Either(out object variableValueBoxed, "v", "value");
-					bool shouldShow = args.Either(out _, "show");
+					bool hasValue = args.Either(out string variableValue, "v", "value");
+					bool shouldShow = args.Either<object>(out _, "show");
 
-					if (!hasValue || variableValueBoxed == null)
+					if (!hasValue)
 					{
 						return Error(clientShell, "Incomplete vars command: set flag was found, but no value was provided.");
 					}
-
-					string variableName = (string)variableNameBoxed;
-					string variableValue = (string)variableValueBoxed;
 
 					if (!VariablesParser.TryParse(variableValue, out object parsedValue))
 					{

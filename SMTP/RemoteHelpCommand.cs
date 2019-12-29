@@ -10,22 +10,22 @@ using System.Threading.Tasks;
 namespace SMTP
 {
 	/// <summary>
-	/// A simple identifier command (RFC821 equivalent: HELO).
+	/// Asks the remote SMTP server to provide its HELP command (SMTP equivalent: HELP).
 	/// </summary>
-	class IdentifyCommand : ICommand
+	class RemoteHelpCommand : ICommand
 	{
 		/// <summary>
-		/// The help string to display.
+		/// The help string to be displayed in the local shell's help screen.
 		/// </summary>
-		public string Help => Format.Name(Name, new Arg("domain", "domain_name", 'd')) + Format.Text("Identifies your domain with the remote host and opens an SMTP state (SMTP equivalent: HELO).");
+		public string Help => Format.Name(Name, new Arg("command", "help_on_command_name", 'c', false)) + Format.Text("Sends a HELP command to a remote SMTP shell (SMTP equivalent: HELP)");
 
 		/// <summary>
-		/// The name of the command (identify).
+		/// The name of the command (shelp).
 		/// </summary>
-		public string Name => "identify";
+		public string Name => "shelp";
 
 		/// <summary>
-		/// Sends a HELO command through a connected service, displays an error if the shell is not connected.
+		/// Sends a HELP command to the connected SMTP shell.
 		/// </summary>
 		public bool Execute(IShell sourceShell, ParameterSet args = null)
 		{
@@ -33,17 +33,12 @@ namespace SMTP
 			{
 				ClientShell clientShell = sourceShell as ClientShell;
 
-				string domain = null;
-				bool hasDomain = args?.Either(out domain, "domain", "d") ?? false;
-
-				if (!hasDomain)
-				{
-					return Format.Error(sourceShell, Name, "Domain argument not found, please refer to help screen.");
-				}
+				string command = null;
+				args?.Either(out command, "command", "c");
 
 				try
 				{
-					clientShell.Send($"HELO {domain}");
+					clientShell.Send($"HELP {command}");
 				}
 				catch (IOException e)
 				{

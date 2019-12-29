@@ -303,7 +303,22 @@ namespace Shell
 			string[] components = command.Split(new char[] { ' ' });
 
 			// Check for a header
-			if (components.Length == 0 || components[0][0] == '-')
+			if (components.Length == 0)
+			{
+				return false;
+			}
+
+			// Skip to header.
+			int firstChar = 0;
+
+			while (components[firstChar].Length == 0)
+			{
+				firstChar++;
+			}
+
+			components = components.Skip(firstChar).ToArray();
+
+			if (components[0][0] == '-')
 			{
 				return false;
 			}

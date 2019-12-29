@@ -21,7 +21,7 @@ namespace Shell
 		/// </summary>
 		/// <param name="validKeys">The list of valid keys to match.</param>
 		/// <returns>The command that matches any of the keys.</returns>
-		public bool Either(out object arg, params string[] validKeys)
+		public bool Either<T>(out T arg, params string[] validKeys)
 		{
 			arg = default;
 
@@ -29,7 +29,7 @@ namespace Shell
 			{
 				if (ContainsKey(key))
 				{
-					arg = this[key].Value;
+					arg = (T)this[key].Value;
 					return true;
 				}
 			}

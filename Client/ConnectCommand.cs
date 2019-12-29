@@ -47,8 +47,8 @@ namespace Client
 					return Error(sourceShell, "Invalid argument count, type \"help\" for more information.");
 				}
 
-				bool hasHost = args.Either(out object hostName, "h", "host");
-				bool hasPort = args.Either(out object portNum, "p", "port");
+				bool hasHost = args.Either(out string hostName, "h", "host");
+				bool hasPort = args.Either(out string portNum, "p", "port");
 
 				if (!hasHost || hostName == null)
 				{
@@ -60,10 +60,7 @@ namespace Client
 					return Error(sourceShell, "Invalid argumens: no port numebr found (-p/--port).");
 				}
 
-				string parsedHost = (string)hostName;
-				string parsedPort = (string)portNum;
-
-				if (!int.TryParse(parsedPort, out int portNumber))
+				if (!int.TryParse(portNum, out int portNumber))
 				{
 					return Error(sourceShell, "Invalid port number: ensure only digits are used.");
 				}
@@ -75,7 +72,7 @@ namespace Client
 
 				try
 				{
-					shell.Connect(parsedHost, portNumber);
+					shell.Connect(hostName, portNumber);
 				}
 				catch (Exception e)
 				{

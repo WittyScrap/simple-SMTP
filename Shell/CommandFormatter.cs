@@ -11,11 +11,12 @@
 		/// <param name="name">The name of the argument in the --name format.</param>
 		/// <param name="friendlyName">The friendly name of the argument (argument value hint).</param>
 		/// <param name="shortName">The short name of the argument in the -n format.</param>
-		public Arg(string name, string friendlyName, char shortName = '\0')
+		public Arg(string name, string friendlyName, char shortName = '\0', bool required = true)
 		{
 			Name = name;
 			FriendlyName = friendlyName;
 			ShortName = shortName;
+			Required = required;
 		}
 
 		/// <summary>
@@ -32,6 +33,11 @@
 		/// The short version of the argument, char 0 indicates no short name is provided.
 		/// </summary>
 		public char ShortName { get; }
+
+		/// <summary>
+		/// Whether or not the argument is required.
+		/// </summary>
+		public bool Required { get; }
 	}
 
 	/// <summary>
@@ -39,6 +45,21 @@
 	/// </summary>
 	public static class Format
 	{
+		/// <summary>
+		/// Returns the correct type of brackets to use for this argument.
+		/// </summary>
+		private static string GetBracketSet(Arg arg)
+		{
+			if (arg.Required)
+			{
+				return "<>";
+			}
+			else
+			{
+				return "[]";
+			}
+		}
+
 		/// <summary>
 		/// Unpacks an arguments array into a string.
 		/// </summary>
@@ -53,12 +74,13 @@
 
 			foreach (Arg arg in args)
 			{
-				output += Text(" <--") + Text(arg.Name);
+				string bracket = GetBracketSet(arg);
+				output += Text($" {bracket[0]}--") + Text(arg.Name);
 				if (arg.ShortName != '\0')
 				{
 					output += Text("/-") + Text(arg.ShortName.ToString());
 				}
-				output += " " + arg.FriendlyName + Text(">");
+				output += " " + arg.FriendlyName + Text($"{bracket[1]}");
 			}
 
 			return output;
@@ -77,7 +99,7 @@
 		/// </summary>
 		public static string Text(string text)
 		{
-			return $@"\cf2\i {text} \i0\cf3 ";
+			return $@"\cf2\i {text}\i0\cf3 ";
 		}
 
 		/// <summary>
@@ -85,7 +107,7 @@
 		/// </summary>
 		public static string Output(string text)
 		{
-			return $@"\cf1\b {text} \b0\cf3 ";
+			return $@"\cf1\b {text}\b0\cf3 ";
 		}
 
 		/// <summary>
