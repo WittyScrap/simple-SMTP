@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 // Disambiguations
 using Timer = System.Windows.Forms.Timer;
 using System.Text.RegularExpressions;
+using VariableManagement;
 
 namespace Shell
 {
@@ -92,8 +93,17 @@ namespace Shell
 			}
 			else
 			{
-				Print(entityMachine, @"Error:\i  Command \""" + command + @"\"" does not exist.\i0");
+				Print(entityMachine, $@"Error:\i  Command \""{command}\"" does not exist.\i0");
 			}
+		}
+
+		/// <summary>
+		/// Transmits an unmanaged command.
+		/// </summary>
+		/// <param name="command">The formatted unmanaged command.</param>
+		public virtual void OnUnmanagedCommandSend(string command)
+		{
+			OnUnmanagedCommand(command.Substring(1, command.Length - 1));
 		}
 
 		/// <summary>
@@ -111,6 +121,15 @@ namespace Shell
 		/// <param name="command">The command to send to the remote host.</param>
 		public async void SendCommand(string command)
 		{
+			if (command[0] == '$')
+			{
+				SetActive(false);
+				Print(entityUser, Format.Output(command));
+				await Task.Run(() => OnUnmanagedCommandSend(command));
+				SetActive(true);
+				return;
+			}
+
 			command = Sanitise(command);
 			if (!ParseCommand(command, out string header, out ParameterSet args))
 			{
@@ -132,8 +151,7 @@ namespace Shell
 			{
 				SetActive(false);
 				Print(entityUser, GetCommandFormat(header, args));
-				Task commandTask = Task.Run(() => OnCommandSend(header, args));
-				await commandTask;
+				await Task.Run(() => OnCommandSend(header, args));
 				SetActive(true);
 			}
 		}
@@ -145,6 +163,12 @@ namespace Shell
 		public void Print(string source, string output)
 		{
 			output = OnOutputReceive(source, output);
+
+			if (!Variables.Get<bool>("shell.shownames"))
+			{
+				source = "";
+			}
+
 			string rtf = @"{\rtf1\ansi {\colortbl ;\red255\green255\blue255;\red204\green204\blue204;\red0\green255\blue0;}\b "
 						   + source + @"\b0: " + output + @"\b0\i0\cf3\line}";
 			EnqueueCommand(() => AppendOutput(rtf));
@@ -256,6 +280,13 @@ namespace Shell
 		{
 			return Regex.Replace(input.Replace("\\", ""), @"\{\*?\\[^{}]+}|[{}]|\\\n?[A-Za-z]+\n?(?:-?\d+)?[ ]?", "");
 		}
+
+		/// <summary>
+		/// Method invoked when an unmanaged command (command beginning with $), AKA a command that does not relate to
+		/// any command present in the internal command set, has been entered.
+		/// </summary>
+		/// <param name="command">The unmanaged command (without the $ prefix).</param>
+		protected abstract void OnUnmanagedCommand(string command);
 
 		/// <summary>
 		/// Parses a command into a header and a set of keys and values
@@ -518,6 +549,15 @@ namespace Shell
 				return;
 			}
 
+			try
+			{
+				_enviromentVars = Variables.Load("../../Environment.vars");
+			}
+			catch (Exception e)
+			{
+				Print(entityMachine, e.Message);
+			}
+
 			if (OnShellInit())
 			{
 				_shellState = ShellState.Ready;
@@ -580,7 +620,7 @@ namespace Shell
 		/// </summary>
 		private void Input_KeyDown(object sender, KeyEventArgs e)
 		{
-			if (_inputHistory.Count == 0 || !IsActive)
+			if (!IsActive || _inputHistory.Count == 0)
 			{
 				return;
 			}
@@ -636,11 +676,17 @@ namespace Shell
 		/// </summary>
 		public TCommandSet Commands => _commandSet;
 
-        // -- Shell management -- //
+		/// <summary>
+		/// Accessor for the environmental variables.
+		/// </summary>
+		public Variables Variables => _enviromentVars;
 
-        private ConcurrentQueue<Action> _windowCommandQueue;
+		// -- Shell management -- //
+
+		private ConcurrentQueue<Action> _windowCommandQueue;
 		private LinkedListNode<string> _historyPlace;
 		private LinkedList<string> _inputHistory;
+		private Variables _enviromentVars;
 		private TCommandSet _commandSet;
 		private ShellState _shellState;
 		private Thread _formThread;

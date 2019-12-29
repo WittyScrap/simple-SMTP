@@ -77,7 +77,27 @@
 		/// </summary>
 		public static string Text(string text)
 		{
-			return @"\cf2\i " + text + @"\i0\cf3 ";
+			return $@"\cf2\i {text} \i0\cf3 ";
+		}
+
+		/// <summary>
+		/// Format for displaying user input in the shell.
+		/// </summary>
+		public static string Output(string text)
+		{
+			return $@"\cf1\b {text} \b0\cf3 ";
+		}
+
+		/// <summary>
+		/// Prompts an error message on the given shell.
+		/// </summary>
+		/// <param name="sourceShell"></param>
+		/// <param name="errorMessage"></param>
+		/// <returns></returns>
+		public static bool Error(IShell sourceShell, string command, string errorMessage)
+		{
+			sourceShell.Print(command, errorMessage);
+			return false;
 		}
 	}
 }

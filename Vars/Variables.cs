@@ -23,6 +23,14 @@ namespace VariableManagement
 		}
 
 		/// <summary>
+		/// Returns a variable's value converted to a given type.
+		/// </summary>
+		public T Get<T>(string key)
+		{
+			return (T)this[key];
+		}
+
+		/// <summary>
 		/// Accesses a variable through a key.
 		/// </summary>
 		public object this[string key] {

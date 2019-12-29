@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using Shell;
 using System.Net;
 using VariableManagement;
+using System.IO;
 
 namespace Client
 {
@@ -39,8 +40,8 @@ namespace Client
 				try
 				{
 					_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-					_connection.ReceiveTimeout = (int)Variables["environment.timeout"];
-					_connection.SendTimeout = (int)Variables["environment.timeout"];
+					_connection.ReceiveTimeout = (int)Variables["network.timeout"];
+					_connection.SendTimeout = (int)Variables["network.timeout"];
 					_connection.Connect(endPoint);
 				}
 				catch (SocketException e)
@@ -155,7 +156,7 @@ namespace Client
 		{
 			if (!IsConnected)
 			{
-				return;
+				throw new IOException("Shell not connected, could not read from or write to remote host.");
 			}
 
 			_messageQueue.Enqueue(message);
@@ -167,14 +168,6 @@ namespace Client
 		protected override bool OnShellInit()
 		{
 			_messageQueue = new ConcurrentQueue<string>();
-			try
-			{
-				_enviromentVars = Variables.Load("../../Environment.vars");
-			}
-			catch (Exception e)
-			{
-				Print(entityMachine, e.Message);
-			}
 			return base.OnShellInit();
 		}
 
@@ -245,6 +238,21 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Sends a command directly to the connected host, if a connected host exists (shorthand for SEND command).
+		/// </summary>
+		protected override void OnUnmanagedCommand(string command)
+		{
+			try
+			{
+				Send(command);
+			}
+			catch (IOException e)
+			{
+				Format.Error(this, entityHost, e.Message);
+			}
+		}
+
+		/// <summary>
 		/// Tests if the socket has fully connected.
 		/// </summary>
 		public bool IsConnected {
@@ -274,11 +282,6 @@ namespace Client
 		}
 
 		/// <summary>
-		/// Accessor for the environmental variables.
-		/// </summary>
-		public Variables Variables => _enviromentVars;
-
-		/// <summary>
 		/// Information on the remote host this shell is
 		/// connected to.
 		/// </summary>
@@ -298,7 +301,6 @@ namespace Client
 
 		private Socket _connection;
 		private Thread _socketThread;
-		private Variables _enviromentVars;
 		private ConcurrentQueue<string> _messageQueue;
 
 		// -- Network data --
@@ -306,7 +308,7 @@ namespace Client
 		/// <summary>
 		/// The agreed size of the buffer.
 		/// </summary>
-		private int BufferSize => (int)Variables["environment.buffer_size"];
+		private int BufferSize => (int)Variables["network.buffer_size"];
 
 		// -- Entity management override --
 

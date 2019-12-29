@@ -67,5 +67,11 @@
       <DependentUpon>AsyncShell.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Vars\Vars.csproj">
+      <Project>{213DB845-43F8-4564-8F14-DC23284B58DF}</Project>
+      <Name>Vars</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
