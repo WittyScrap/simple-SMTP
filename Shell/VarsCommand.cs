@@ -11,7 +11,7 @@ namespace Client
 	/// <summary>
 	/// Lists all environmental variables as loaded in memory.
 	/// </summary>
-	class VarsCommand : ICommand
+	public class VarsCommand : ICommand
 	{
 		/// <summary>
 		/// Displays the help section for this command.
@@ -28,70 +28,61 @@ namespace Client
 		/// </summary>
 		public bool Execute(IShell sourceShell, ParameterSet args = null)
 		{
-			if (sourceShell is ClientShell)
+			if (sourceShell.Variables == null)
 			{
-				ClientShell clientShell = sourceShell as ClientShell;
+				return Error(sourceShell, "Variables could not be parsed, please check the environment.vars file for errors.");
+			}
 
-				if (clientShell.Variables == null)
-				{
-					return Error(clientShell, "Variables could not be parsed, please check the environment.vars file for errors.");
-				}
+			string variableName = null;
+			bool hasSet = args != null && args.Either(out variableName, "s", "set");
 
-				string variableName = null;
-				bool hasSet = args != null && args.Either(out variableName, "s", "set");
+			if (!hasSet)
+			{
+				string formattedOutput = "";
 
-				if (!hasSet)
-				{
-					string formattedOutput = "";
+				DisplayVariableBlock(sourceShell.Variables.Root, ref formattedOutput);
+				sourceShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
 
-					DisplayVariableBlock(clientShell.Variables.Root, ref formattedOutput);
-					clientShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
-
-					return true;
-				}
-				else
-				{
-					if (variableName == null)
-					{
-						return Error(clientShell, "Incomplete vars command: set flag was found, but no variable name was provided.");
-					}
-
-					bool hasValue = args.Either(out string variableValue, "v", "value");
-					bool shouldShow = args.Either<object>(out _, "show");
-
-					if (!hasValue)
-					{
-						return Error(clientShell, "Incomplete vars command: set flag was found, but no value was provided.");
-					}
-
-					if (!VariablesParser.TryParse(variableValue, out object parsedValue))
-					{
-						return Error(clientShell, "Invalid value type provided.");
-					}
-
-					try
-					{
-						clientShell.Variables[variableName] = parsedValue;
-					}
-					catch (Exception e)
-					{
-						return Error(clientShell, "Error: " + e.Message);
-					}
-
-					if (shouldShow)
-					{
-						string formattedOutput = "";
-
-						DisplayVariableBlock(clientShell.Variables.Root, ref formattedOutput);
-						clientShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
-					}
-
-					return true;
-				}
+				return true;
 			}
 			else
 			{
-				return Error(sourceShell, "The vars command is not supported on this shell.");
+				if (variableName == null)
+				{
+					return Error(sourceShell, "Incomplete vars command: set flag was found, but no variable name was provided.");
+				}
+
+				bool hasValue = args.Either(out string variableValue, "v", "value");
+				bool shouldShow = args.Either<object>(out _, "show");
+
+				if (!hasValue)
+				{
+					return Error(sourceShell, "Incomplete vars command: set flag was found, but no value was provided.");
+				}
+
+				if (!VariablesParser.TryParse(variableValue, out object parsedValue))
+				{
+					return Error(sourceShell, "Invalid value type provided.");
+				}
+
+				try
+				{
+					sourceShell.Variables[variableName] = parsedValue;
+				}
+				catch (Exception e)
+				{
+					return Error(sourceShell, "Error: " + e.Message);
+				}
+
+				if (shouldShow)
+				{
+					string formattedOutput = "";
+
+					DisplayVariableBlock(sourceShell.Variables.Root, ref formattedOutput);
+					sourceShell.Print("vars", @"\cf2\i Variables will be displayed below.\i0" + formattedOutput + @"\cf3");
+				}
+
+				return true;
 			}
 		}
 

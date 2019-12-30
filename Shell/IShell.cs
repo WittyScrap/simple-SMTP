@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VariableManagement;
 
 namespace Shell
 {
@@ -42,5 +43,10 @@ namespace Shell
         /// Clears the console.
         /// </summary>
         void Clear();
+
+        /// <summary>
+        /// Environment variables.
+        /// </summary>
+        Variables Variables { get; }
     }
 }
