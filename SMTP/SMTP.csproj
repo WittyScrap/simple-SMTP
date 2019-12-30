@@ -47,7 +47,10 @@
     <Compile Include="NoopCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuitCommand.cs" />
-    <Compile Include="RemoteHelpCommand.cs" />
+    <Compile Include="HelpCommand.cs" />
+    <Compile Include="ResetCommand.cs" />
+    <Compile Include="SMTPException.cs" />
+    <Compile Include="SMTPResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Client\Client.csproj">

@@ -12,12 +12,12 @@ namespace SMTP
 	/// <summary>
 	/// Asks the remote SMTP server to provide its HELP command (SMTP equivalent: HELP).
 	/// </summary>
-	class RemoteHelpCommand : ICommand
+	class HelpCommand : ICommand
 	{
 		/// <summary>
 		/// The help string to be displayed in the local shell's help screen.
 		/// </summary>
-		public string Help => Format.Name(Name, new Arg("command", "help_on_command_name", 'c', false)) + Format.Text("Sends a HELP command to a remote SMTP shell (SMTP equivalent: HELP)");
+		public string Help => Format.Name(Name, new Arg("command", "help_on_command_name", 'c', false)) + Format.Text("Sends a HELP command to a remote SMTP shell (SMTP equivalent: HELP).");
 
 		/// <summary>
 		/// The name of the command (shelp).
@@ -38,7 +38,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send($"HELP {command}");
+					clientShell.Send($"HELP {command}\r\n");
 				}
 				catch (IOException e)
 				{

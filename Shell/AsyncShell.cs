@@ -121,7 +121,7 @@ namespace Shell
 		/// <param name="command">The command to send to the remote host.</param>
 		public async void SendCommand(string command)
 		{
-			if (command[0] == '$')
+			if (command.Length > 0 && command[0] == '$')
 			{
 				SetActive(false);
 				Print(entityUser, Format.Output(command));

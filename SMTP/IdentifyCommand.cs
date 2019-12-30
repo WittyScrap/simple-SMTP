@@ -43,7 +43,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send($"HELO {domain}");
+					clientShell.Send($"HELO {domain}\r\n");
 				}
 				catch (IOException e)
 				{

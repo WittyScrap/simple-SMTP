@@ -5,19 +5,19 @@ using System.IO;
 namespace SMTP
 {
 	/// <summary>
-	/// Performs no operation but expects a response (SMTP equivalent: NOOP).
+	/// Sends a command to reset the remote SMTP server's state (SMTP equivalent: RSET).
 	/// </summary>
-	class NoopCommand : ICommand
+	class ResetCommand : ICommand
 	{
 		/// <summary>
 		/// Help text to be displayed in help screen.
 		/// </summary>
-		public string Help => Format.Name(Name) + Format.Text("Performs no operation, expects a response from the SMTP server (SMTP equivalent: NOOP).");
+		public string Help => Format.Name(Name) + Format.Text("Sends a command to reset the remote SMTP server's state (SMTP equivalent: RSET).");
 
 		/// <summary>
-		/// The name of the command (nop).
+		/// The name of the command (reset).
 		/// </summary>
-		public string Name => "nop";
+		public string Name => "reset";
 
 		/// <summary>
 		/// Sends a NOOP command to the connected SMTP server.
@@ -30,7 +30,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send("NOOP\r\n");
+					clientShell.Send("RSET\r\n");
 				}
 				catch (IOException e)
 				{

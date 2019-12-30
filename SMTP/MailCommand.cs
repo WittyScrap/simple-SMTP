@@ -14,7 +14,7 @@ namespace SMTP
 		/// <summary>
 		/// Displays related help message.
 		/// </summary>
-		public string Help => Format.Name(Name, new Arg("from", "sender_address"), new Arg("to[1, 2, ...]", "receiver_address"), new Arg("data/block", "data (or none)"));
+		public string Help => Format.Name(Name, new Arg("from", "sender_address"), new Arg("to[1, 2, ...]", "receiver_address"), new Arg("data/block", "data (or none)")) + Format.Text("Sends an email to all receiver addresses (SMTP equivalent: MAIL/RCPT/DATA).");
 
 		/// <summary>
 		/// The name of the command (mail).
@@ -71,7 +71,7 @@ namespace SMTP
 
 				List<string> receivers = new List<string>(new string[] { mainReceiver });
 
-				for (int i = 1; !args.Either(out string receiver, "to" + i); ++i)
+				for (int i = 1; args.Either(out string receiver, "to" + i); ++i)
 				{
 					receivers.Add(receiver);
 				}
@@ -84,8 +84,7 @@ namespace SMTP
 					}
 				}
 
-				string data = null;
-				bool hasData = args.Either(out data, "data");
+				bool hasData = args.Either(out string data, "data");
 
 				if (!hasData)
 				{
@@ -104,22 +103,63 @@ namespace SMTP
 					}
 				}
 
+				clientShell.Listen = false; // Manual response management.
+
 				try
 				{
-					clientShell.Send($"MAIL FROM:<{sender}>");
+					clientShell.Send($"MAIL FROM:<{sender}>\r\n");
+
+					// Expect 250 OK
+					if (!clientShell.TryReceive(out string message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+					{
+						throw new SMTPException($"Invalid response: {message}" ?? "No response received on MAIL command.");
+					}
 					
 					foreach (string receiver in receivers)
 					{
-						clientShell.Send($"RCPT TO:<{receiver}>");
+						clientShell.Send($"RCPT TO:<{receiver}>\r\n");
+
+						// Expect 250 OK
+						if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+						{
+							throw new SMTPException($"Invalid response: {message}" ?? $"No response received on RCPT command for address: {receiver}.");
+						}
 					}
 
-					clientShell.Send("DATA");
-					clientShell.Send(data);
+					clientShell.Send("DATA\r\n");
+
+					// Expect 354 End data with <CR><LF>.<CR><LF>
+					if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Redirect)
+					{
+						throw new SMTPException($"Invalid response: {message}" ?? "No response received on DATA command.");
+					}
+
+					string[] segments = data.Split('\n', '\r');
+
+					foreach (string dataSegment in segments)
+					{
+						clientShell.Send(dataSegment + "\r\n");
+					}
+
 					clientShell.Send("\r\n.\r\n");
+
+					// Expect 250 OK
+					if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+					{
+						throw new SMTPException($"Invalid response: {message}" ?? "No response received on . (end of DATA) command.");
+					}
 				}
 				catch (IOException e)
 				{
 					return Format.Error(clientShell, Name, e.Message);
+				}
+				catch (SMTPException e)
+				{
+					return Format.Error(clientShell, Name, e.Message);
+				}
+				finally
+				{
+					clientShell.Listen = true;
 				}
 
 				return true;

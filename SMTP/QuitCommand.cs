@@ -35,7 +35,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send("QUIT");
+					clientShell.Send("QUIT\r\n");
 				}
 				catch (IOException e)
 				{

@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Shell;
+using System;
+using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 using System.Net.Sockets;
-using Shell;
-using System.Net;
-using VariableManagement;
-using System.IO;
+using System.Collections.Concurrent;
 
 namespace Client
 {
@@ -35,32 +31,43 @@ namespace Client
 
 			IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
 
-			_socketThread = new Thread(() =>
+			try
 			{
-				try
-				{
-					_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-					_connection.ReceiveTimeout = (int)Variables["network.timeout"];
-					_connection.SendTimeout = (int)Variables["network.timeout"];
-					_connection.Connect(endPoint);
-				}
-				catch (SocketException e)
-				{
-					Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
-					_connection = null;
-					return;
-				}
+				_connection = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+				_connection.ReceiveTimeout = (int)Variables["network.timeout"];
+				_connection.SendTimeout = (int)Variables["network.timeout"];
+				_connection.Connect(endPoint);
+			}
+			catch (SocketException e)
+			{
+				Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+				_connection = null;
+				return;
+			}
 
-                Print(entityMachine, "Successfully connected to " + Remote);
+			Print(entityMachine, "Successfully connected to " + Remote);
 
+			_senderThread = new Thread(() =>
+			{
 				while (IsConnected)
 				{
 					SendAllMessages();
-					DisplayResponse();
 				}
 			});
 
-			_socketThread.Start();
+			_listenThread = new Thread(() =>
+			{
+				while (IsConnected)
+				{
+					if (Listen)
+					{
+						DisplayResponse();
+					}
+				}
+			});
+
+			_senderThread.Start();
+			_listenThread.Start();
 		}
 
 		/// <summary>
@@ -295,12 +302,18 @@ namespace Client
 			}
 		}
 
+		/// <summary>
+		/// Whether or not the shell should be constantly listening for responses.
+		/// </summary>
+		public bool Listen { get; set; }
+
 		/* ------------ */
 		/* --- Data --- */
 		/* ------------ */
 
 		private Socket _connection;
-		private Thread _socketThread;
+		private Thread _senderThread;
+		private Thread _listenThread;
 		private ConcurrentQueue<string> _messageQueue;
 
 		// -- Network data --
