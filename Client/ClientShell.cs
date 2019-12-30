@@ -253,9 +253,9 @@ namespace Client
 			{
 				Send(command);
 			}
-			catch (IOException e)
+			catch (IOException)
 			{
-				Format.Error(this, entityHost, e.Message);
+				EnqueueCommand(() => SendCommandSilent(command));
 			}
 		}
 
@@ -305,7 +305,7 @@ namespace Client
 		/// <summary>
 		/// Whether or not the shell should be constantly listening for responses.
 		/// </summary>
-		public bool Listen { get; set; }
+		public bool Listen { get; set; } = true;
 
 		/* ------------ */
 		/* --- Data --- */

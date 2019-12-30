@@ -199,7 +199,7 @@ namespace VariableManagement
 			}
 			else // Assume string
 			{
-				parsed = '"' + token + '"';
+				parsed = token;
 			}
 
 

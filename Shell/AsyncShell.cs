@@ -46,6 +46,30 @@ namespace Shell
 		public AsyncShell()
 		{
 			InitializeComponent();
+
+			try
+			{
+				_enviromentVars = Variables.Load("../../Environment.vars");
+			}
+			catch (Exception e)
+			{
+				Print(entityMachine, e.Message);
+			}
+
+			Text = Variables.Get<string>("shell.title");
+
+			_enviromentVars.OnVariableUpdated += _enviromentVars_OnVariableUpdated;
+		}
+
+		/// <summary>
+		/// Ensure the title is kept up to date.
+		/// </summary>
+		private void _enviromentVars_OnVariableUpdated(string key, object newValue)
+		{
+			if (key == "shell.title")
+			{
+				EnqueueCommand(() => Text = (string)newValue);
+			}
 		}
 
 		/// <summary>
@@ -103,7 +127,7 @@ namespace Shell
 		/// <param name="command">The formatted unmanaged command.</param>
 		public virtual void OnUnmanagedCommandSend(string command)
 		{
-			OnUnmanagedCommand(command.Substring(1, command.Length - 1));
+			OnUnmanagedCommand(command);
 		}
 
 		/// <summary>
@@ -124,13 +148,19 @@ namespace Shell
 			if (command.Length > 0 && command[0] == '$')
 			{
 				SetActive(false);
-				Print(entityUser, Format.Output(command));
+
+				command = command.Substring(1, command.Length - 1);
+
+				Print(entityUser, Format.Output($@"\cf4 $") + Format.Output(command));
 				await Task.Run(() => OnUnmanagedCommandSend(command));
+
 				SetActive(true);
+
 				return;
 			}
 
 			command = Sanitise(command);
+
 			if (!ParseCommand(command, out string header, out ParameterSet args))
 			{
 				string error;
@@ -150,8 +180,43 @@ namespace Shell
 			else
 			{
 				SetActive(false);
+
 				Print(entityUser, GetCommandFormat(header, args));
 				await Task.Run(() => OnCommandSend(header, args));
+
+				SetActive(true);
+			}
+		}
+
+		/// <summary>
+		/// Sends a command to this shell without displaying any output.
+		/// </summary>
+		/// <param name="command">The command to be sent.</param>
+		public async void SendCommandSilent(string command)
+		{
+			command = Sanitise(command);
+
+			if (!ParseCommand(command, out string header, out ParameterSet args))
+			{
+				string error;
+
+				if (!string.IsNullOrEmpty(header))
+				{
+					error = "Invalid format.";
+				}
+				else
+				{
+					error = "No command detected, note that commands cannot be prefixed by - or --.";
+				}
+
+				Print(entityMachine, @"Error: \i " + error + @"\i0");
+			}
+			else
+			{
+				SetActive(false);
+
+				await Task.Run(() => OnCommandSend(header, args));
+
 				SetActive(true);
 			}
 		}
@@ -168,9 +233,13 @@ namespace Shell
 			{
 				source = "";
 			}
+			else
+			{
+				source += @"\b0: ";
+			}
 
-			string rtf = @"{\rtf1\ansi {\colortbl ;\red255\green255\blue255;\red204\green204\blue204;\red0\green255\blue0;}\b "
-						   + source + @"\b0: " + output + @"\b0\i0\cf3\line}";
+			string rtf = @"{\rtf1\ansi {\colortbl ;\red255\green255\blue255;\red204\green204\blue204;\red0\green255\blue0;\red254\green20\blue20;}\b "
+						   + source + output + @"\b0\i0\cf3\line}";
 			EnqueueCommand(() => AppendOutput(rtf));
 		}
 
@@ -562,15 +631,6 @@ namespace Shell
 				}
 
 				return;
-			}
-
-			try
-			{
-				_enviromentVars = Variables.Load("../../Environment.vars");
-			}
-			catch (Exception e)
-			{
-				Print(entityMachine, e.Message);
 			}
 
 			if (OnShellInit())

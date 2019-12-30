@@ -58,6 +58,7 @@
     <Compile Include="ICommandSet.cs" />
     <Compile Include="IExpandableCommandSet.cs" />
     <Compile Include="IShell.cs" />
+    <Compile Include="LoadCommand.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="ParameterSet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

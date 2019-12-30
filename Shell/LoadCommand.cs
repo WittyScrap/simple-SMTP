@@ -7,12 +7,12 @@ using System.IO;
 using Shell;
 using System.Reflection;
 
-namespace Client
+namespace Shell
 {
 	/// <summary>
 	/// Loads a custom command set.
 	/// </summary>
-	class LoadCommand<TDestinationSet> : ICommand where TDestinationSet : IExpandableCommandSet, new()
+	public class LoadCommand<TDestinationSet> : ICommand where TDestinationSet : IExpandableCommandSet, new()
 	{
 		/// <summary>
 		/// Displays the help screen.

@@ -1,33 +1,31 @@
-﻿using System;
+﻿using Shell;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Shell;
 
-namespace Client
+namespace Server
 {
 	/// <summary>
-	/// Set of commands for the client-side of the
-	/// system.
+	/// The command set to be used by the server.
 	/// </summary>
-	public class ClientCommandSet : IExpandableCommandSet
+	class ServerCommandSet : IExpandableCommandSet
 	{
 		/// <summary>
 		/// Saves all related commands.
 		/// </summary>
-		public ClientCommandSet()
+		public ServerCommandSet()
 		{
 			_commands = new Dictionary<string, ICommand>
 			{
 				["help"] = new HelpCommand(),
 				["clear"] = new ClearCommand(),
 				["vars"] = new VarsCommand(),
-				["connect"] = new ConnectCommand(),
-				["send"] = new SendCommand(),
-				["disconnect"] = new DisconnectCommand(),
-				["load"] = new LoadCommand<ClientCommandSet>()
+				["start"] = new StartCommand(),
+				["stop"] = new StopCommand(),
+				["load"] = new LoadCommand<ServerCommandSet>()
 			};
 		}
 

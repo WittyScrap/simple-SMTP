@@ -69,6 +69,9 @@ namespace VariableManagement
 				}
 
 				previous.SetFieldValue(components.Dequeue(), value);
+
+				// Set event
+				OnVariableUpdated?.Invoke(key, value);
 			}
 		}
 
@@ -264,5 +267,18 @@ namespace VariableManagement
 		/// No way to obtain the total amount of fields/objects for now.
 		/// </summary>
 		public int Count => -1;
+
+
+		/* -------------- */
+		/* --- Events --- */
+		/* -------------- */
+
+		// Events delegate
+		public delegate void VariableEvent(string key, object newValue);
+
+		/// <summary>
+		/// Event called when a variable has been altered.
+		/// </summary>
+		public event VariableEvent OnVariableUpdated;
 	}
 }
