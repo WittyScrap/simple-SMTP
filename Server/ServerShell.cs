@@ -56,7 +56,7 @@ namespace Server
 
 			_listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 			_listener.Bind(endPoint);
-			_listener.Listen(0);
+			_listener.Listen(Variables.Get<int>("network.max_clients"));
 
 			EnqueueCommand(() => Print(entityMachine, $"Server started on {host}:{port}"));
 

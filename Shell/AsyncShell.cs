@@ -372,7 +372,7 @@ namespace Shell
 			string[] components = command.Split(new char[] { ' ' });
 
 			// Check for a header
-			if (components.Length == 0)
+			if (components.Length == 0 || components.Length == 1 && string.IsNullOrWhiteSpace(components[0]))
 			{
 				return false;
 			}

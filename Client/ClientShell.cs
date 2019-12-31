@@ -68,6 +68,8 @@ namespace Client
 
 			_senderThread.Start();
 			_listenThread.Start();
+
+			IsConnected = true;
 		}
 
 		/// <summary>
@@ -84,6 +86,8 @@ namespace Client
 				_connection = null;
 
 				Print(entityMachine, "Disconnected from " + remote);
+
+				IsConnected = false;
 			}
 		}
 
@@ -94,8 +98,17 @@ namespace Client
 		/// <returns>The amount of bytes received.</returns>
 		public int ReceiveOnce(byte[] buffer)
 		{
-			if (!IsConnected || _connection.Available == 0)
+			try
 			{
+				if (!IsConnected || _connection.Available == 0)
+				{
+					return 0;
+				}
+			}
+			catch (ObjectDisposedException)
+			{
+				Disconnect();
+
 				return 0;
 			}
 
@@ -108,8 +121,11 @@ namespace Client
 			{
 				return _connection.Receive(buffer);
 			}
-			catch (SocketException)
+			catch (SocketException e)
 			{
+				Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @", disconnecting...\i0\cf3");
+				Disconnect();
+
 				return 0;
 			}
 		}
@@ -217,7 +233,10 @@ namespace Client
 					}
 					catch (SocketException e)
 					{
-						Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+						Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @", disconnecting...\i0\cf3");
+						Disconnect();
+
+						return;
 					}
 				}
             }
@@ -262,31 +281,7 @@ namespace Client
 		/// <summary>
 		/// Tests if the socket has fully connected.
 		/// </summary>
-		public bool IsConnected {
-			get
-			{
-				if (_connection == null)
-				{
-					return false;
-				}
-
-				try
-				{
-					bool doesPoll = _connection.Poll(_connection.ReceiveTimeout, SelectMode.SelectRead);
-					bool anyAvail = _connection.Available != 0;
-
-					return (!doesPoll || anyAvail) && _connection.Connected;
-				}
-				catch (ObjectDisposedException)
-				{
-					return false;
-				}
-				catch (NullReferenceException)
-				{
-					return false;
-				}
-			}
-		}
+		public bool IsConnected { get; private set; }
 
 		/// <summary>
 		/// Information on the remote host this shell is
