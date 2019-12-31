@@ -10,7 +10,7 @@ namespace Server
 	/// <summary>
 	/// Handles running a server of a specific type.
 	/// </summary>
-	interface IServerProgram
+	public interface IServerProgram
 	{
 		/// <summary>
 		/// Handles a client's input.

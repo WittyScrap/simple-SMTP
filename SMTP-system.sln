@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SMTP", "SMTP\SMTP.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{036D960A-8B41-47C6-BBC4-CFA611692457}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "EchoServer\EchoServer.csproj", "{89EEF64F-CEB1-40A8-998C-BCE554C074BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{036D960A-8B41-47C6-BBC4-CFA611692457}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{036D960A-8B41-47C6-BBC4-CFA611692457}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{036D960A-8B41-47C6-BBC4-CFA611692457}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89EEF64F-CEB1-40A8-998C-BCE554C074BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89EEF64F-CEB1-40A8-998C-BCE554C074BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89EEF64F-CEB1-40A8-998C-BCE554C074BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89EEF64F-CEB1-40A8-998C-BCE554C074BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

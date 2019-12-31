@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{036D960A-8B41-47C6-BBC4-CFA611692457}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <ProjectGuid>{89EEF64F-CEB1-40A8-998C-BCE554C074BC}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Server</RootNamespace>
-    <AssemblyName>Server</AssemblyName>
+    <RootNamespace>EchoServer</RootNamespace>
+    <AssemblyName>EchoServer</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\Server\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -30,13 +30,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,30 +41,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientState.cs" />
-    <Compile Include="IServerProgram.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="ProgramCommand.cs" />
+    <Compile Include="EchoServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServerCommandSet.cs" />
-    <Compile Include="ServerShell.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="StartCommand.cs" />
-    <Compile Include="StopCommand.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Shell\Shell.csproj">
-      <Project>{38d6994c-c74f-4602-84f7-c12632dc44c3}</Project>
-      <Name>Shell</Name>
+    <ProjectReference Include="..\Server\Server.csproj">
+      <Project>{036d960a-8b41-47c6-bbc4-cfa611692457}</Project>
+      <Name>Server</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Vars\Vars.csproj">
-      <Project>{213db845-43f8-4564-8f14-dc23284b58df}</Project>
-      <Name>Vars</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Environment.vars" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

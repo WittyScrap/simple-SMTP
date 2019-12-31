@@ -41,6 +41,7 @@ namespace Shell
 					if (File.Exists(packFile))
 					{
 						Assembly packAssembly = Assembly.LoadFile(packFile);
+						int found = 0;
 						
 						foreach (Type packType in packAssembly.GetTypes())
 						{
@@ -56,7 +57,18 @@ namespace Shell
 								{
 									return Error(asyncShell, "Command pack could not be integrated, perhaps it has already been added?");
 								}
+
+								found++;
 							}
+						}
+
+						if (found == 0)
+						{
+							return Error(asyncShell, "No ICommand instances could be found in given DLL pack.");
+						}
+						else
+						{
+							asyncShell.Print(Name, $"Successfully loaded {found} commands.");
 						}
 
 						return true;

@@ -31,6 +31,11 @@ namespace Server
 		/// </summary>
 		public void StartServer(string host, int port)
 		{
+			if (_serverProgram == null)
+			{
+				throw new InvalidOperationException("Could not start a server because no server program was loaded, please use the program command to load a server program.");
+			}
+
 			if (_serverStarted)
 			{
 				throw new InvalidOperationException("Could not start a server because a server has already been created, please use the stop command before starting a new server.");
@@ -140,10 +145,10 @@ namespace Server
 				return;
 			}
 
+			string hostName = GetRemote(connection);
+
 			if (bytesReceived == 0)
 			{
-				string hostName = GetRemote(connection);
-
 				connection.Close();
 				_clients.Remove(connection);
 
@@ -157,8 +162,8 @@ namespace Server
 			byte[] sendBytes = Encode(response);
 			connection.Send(sendBytes);
 
-			EnqueueCommand(() => Print(GetRemote(connection), data));
-			EnqueueCommand(() => Print(entityMachine, response));
+			EnqueueCommand(() => Print(hostName, data));
+			EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
 
 			ClearBuffer(client.ReadBuffer);
 		}
@@ -274,7 +279,7 @@ namespace Server
 		private Socket _listener;
 
 		private Thread _selectorThread;
-		private IServerProgram _serverProgram = new EchoServer();
+		private IServerProgram _serverProgram;
 
 		private bool _serverStarted;
 		private bool _serverIdle;

@@ -31,22 +31,20 @@ namespace Server
 			{
 				ServerShell shell = sourceShell as ServerShell;
 
-				if (args == null || args.Count != 2)
-				{
-					return Format.Error(sourceShell, Name, "Invalid argument count, type \"help\" for more information.");
-				}
+				string hostName = null;
+				string portNum = null;
 
-				bool hasHost = args.Either(out string hostName, "h", "host");
-				bool hasPort = args.Either(out string portNum, "p", "port");
+				bool hasHost = args?.Either(out hostName, "h", "host") ?? false;
+				bool hasPort = args?.Either(out portNum, "p", "port") ?? false;
 
 				if (!hasHost || hostName == null)
 				{
-					return Format.Error(sourceShell, Name, "Invalid arguments: no hostname found (-h/--host).");
+					hostName = shell.Variables.Get<string>("network.default_host");
 				}
 
 				if (!hasPort || portNum == null)
 				{
-					return Format.Error(sourceShell, Name, "Invalid argumens: no port numebr found (-p/--port).");
+					portNum = shell.Variables.Get<int>("network.default_port").ToString();
 				}
 
 				if (!int.TryParse(portNum, out int portNumber))

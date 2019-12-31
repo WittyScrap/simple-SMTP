@@ -118,7 +118,7 @@
 		/// <returns></returns>
 		public static bool Error(IShell sourceShell, string command, string errorMessage)
 		{
-			sourceShell.Print(command, errorMessage);
+			sourceShell.Print(command, $@"\cf1\b Error:\b0\i\cf2  {errorMessage}\cf3\i0");
 			return false;
 		}
 	}

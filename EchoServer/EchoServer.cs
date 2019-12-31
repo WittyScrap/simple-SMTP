@@ -4,8 +4,9 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Server;
 
-namespace Server
+namespace EchoServer
 {
 	/// <summary>
 	/// Simple testing echo server.
