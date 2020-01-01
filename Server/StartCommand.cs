@@ -15,7 +15,7 @@ namespace Server
 		/// <summary>
 		/// Help screen string.
 		/// </summary>
-		public string Help => Format.Name(Name, new Arg("host", "host_name", 'h'), new Arg("port", "port_number", 'p')) + Format.Text("Initialises a server on the given host and port.");
+		public string Help => Format.Name(Name, new Arg("host", "host_name", 'h', false), new Arg("port", "port_number", 'p', false)) + Format.Text("Initialises a server on the given host and port.");
 
 		/// <summary>
 		/// The name of the command (start).

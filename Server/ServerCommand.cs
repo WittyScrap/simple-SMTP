@@ -12,17 +12,17 @@ namespace Server
 	/// <summary>
 	/// Command that allows to load any custom server program into a server shell.
 	/// </summary>
-	class ProgramCommand : ICommand
+	class ServerCommand : ICommand
 	{
 		/// <summary>
 		/// Help screen contents.
 		/// </summary>
-		public string Help => Format.Name(Name, new Arg("pack", "server_dll_name", 'p')) + Format.Text("Loads a server program from the given DLL pack.");
+		public string Help => Format.Name(Name, new Arg("load", "server_dll_name", 'l')) + Format.Text("Loads a server program from the given DLL pack.");
 
 		/// <summary>
-		/// The name of the command (program).
+		/// The name of the command (server).
 		/// </summary>
-		public string Name => "program";
+		public string Name => "server";
 
 		/// <summary>
 		/// Executes the command.
@@ -33,7 +33,7 @@ namespace Server
 			{
 				ServerShell serverShell = sourceShell as ServerShell;
 
-				if (args != null && args.Either(out object packName, "pack", "p") && packName != null)
+				if (args != null && args.Either(out object packName, "load", "l") && packName != null)
 				{
 					string packFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ((string)packName) + ".dll");
 
@@ -67,12 +67,12 @@ namespace Server
 					}
 					else
 					{
-						return Format.Error(serverShell, Name, "Pack file does not exist in the current directory.");
+						return Format.Error(serverShell, Name, "Server pack file does not exist in the current directory.");
 					}
 				}
 				else
 				{
-					return Format.Error(serverShell, Name, "Pack name argument missing (--pack/-p)!");
+					return Format.Error(serverShell, Name, "Server name missing (--load/-l)!");
 				}
 			}
 			else

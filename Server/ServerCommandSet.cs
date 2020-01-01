@@ -23,7 +23,7 @@ namespace Server
 				["help"] = new HelpCommand(),
 				["clear"] = new ClearCommand(),
 				["vars"] = new VarsCommand(),
-				["program"] = new ProgramCommand(),
+				["set"] = new ServerCommand(),
 				["start"] = new StartCommand(),
 				["stop"] = new StopCommand(),
 				["load"] = new LoadCommand<ServerCommandSet>()
