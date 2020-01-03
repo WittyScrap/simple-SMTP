@@ -109,7 +109,7 @@ namespace SMTPServer
 			{
 				HELOCommand helo = (HELOCommand)command;
 
-				if (helo.IsFormatted)
+				if (helo.IsFormatted && helo.Domain != null)
 				{
 					_domain = helo.Domain;
 					_state++;

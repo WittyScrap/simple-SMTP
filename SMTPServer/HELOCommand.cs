@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SMTPServer
@@ -25,6 +26,11 @@ namespace SMTPServer
 		/// Whether or not the command is correctly formatted.
 		/// </summary>
 		public bool IsFormatted { get; }
+
+		/// <summary>
+		/// Regular expression to match a given domain name.
+		/// </summary>
+		private Regex DomainMatch { get; } = new Regex(@"([a-z0-9]+\.)*[a-z0-9]+\.[a-z]+", RegexOptions.Compiled);
 
 		/// <summary>
 		/// The response to this command.
@@ -67,13 +73,16 @@ namespace SMTPServer
 			if (source.Length > 5)
 			{
 				Domain = source.Substring(5);
+
+				if (!DomainMatch.IsMatch(Domain))
+				{
+					Domain = null;
+				}
 			}
 			else
 			{
 				Domain = null;
 			}
-
-			IsFormatted = IsFormatted && Domain != null;
 		}
 	}
 }
