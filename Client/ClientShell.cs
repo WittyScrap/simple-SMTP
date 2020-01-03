@@ -40,7 +40,7 @@ namespace Client
 			}
 			catch (SocketException e)
 			{
-				Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @"\i0\cf3");
+				Format.Error(this, entityMachine, e.Message);
 				_connection = null;
 				return;
 			}
@@ -125,7 +125,7 @@ namespace Client
 			}
 			catch (SocketException e)
 			{
-				Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @", disconnecting...\i0\cf3");
+				Format.Error(this, entityMachine, e.Message + ", disconnecting...");
 				Disconnect();
 
 				return 0;
@@ -259,7 +259,7 @@ namespace Client
 					}
 					catch (SocketException e)
 					{
-						Print(entityMachine, @"\b\cf1Error:\b0\i\cf2  " + e.Message + @", disconnecting...\i0\cf3");
+						Format.Error(this, entityMachine, e.Message + ", disconnecting...");
 						Disconnect();
 
 						return;

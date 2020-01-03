@@ -66,7 +66,7 @@ namespace Shell
 				}
 				catch (Exception e)
 				{
-					return Error(sourceShell, "Error: " + e.Message);
+					return Error(sourceShell, e.Message);
 				}
 
 				if (shouldShow)
@@ -130,8 +130,7 @@ namespace Shell
 		/// <returns>A constant value of false.</returns>
 		private bool Error(IShell shell, string message)
 		{
-			shell.Print("vars", @"\b\cf1Error:\b0\cf2\i  " + message);
-			return false;
+			return Format.Error(shell, Name, message);
 		}
 	}
 }

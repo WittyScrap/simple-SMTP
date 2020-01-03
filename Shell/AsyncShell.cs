@@ -117,7 +117,7 @@ namespace Shell
 			}
 			else
 			{
-				Print(entityMachine, $@"Error:\i  Command \""{command}\"" does not exist.\i0");
+				Format.Error(this, entityMachine, $"Command \"{command}\" does not exist.");
 			}
 		}
 
@@ -175,7 +175,7 @@ namespace Shell
 				}
 
 				Print(entityUser, command);
-				Print(entityMachine, @"Error: \i " + error + @"\i0");
+				Format.Error(this, entityMachine, error);
 			}
 			else
 			{
@@ -209,7 +209,7 @@ namespace Shell
 					error = "No command detected, note that commands cannot be prefixed by - or --.";
 				}
 
-				Print(entityMachine, @"Error: \i " + error + @"\i0");
+				Format.Error(this, entityMachine, error);
 			}
 			else
 			{

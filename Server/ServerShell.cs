@@ -86,7 +86,17 @@ namespace Server
 					_read.Add(client.Connection);
 				}
 
-				Task selection = Task.Run(() => Socket.Select(_read, null, null, Variables.Get<int>("network.select_timeout"))); // Runs selection in parallel as to not stop the thread from closing if necessary.
+				Task selection = Task.Run(() => // Runs selection in parallel as to not stop the thread from closing if necessary.
+				{
+					try
+					{
+						Socket.Select(_read, null, null, Variables.Get<int>("network.select_timeout"));
+					}
+					catch (SocketException)
+					{
+						; // NOP, just end the task.
+					}
+				});
 
 				while (_serverStarted && !selection.IsCompleted)
 				{

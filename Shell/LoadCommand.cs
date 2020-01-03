@@ -98,8 +98,7 @@ namespace Shell
 		/// <returns>A constant value of false.</returns>
 		private bool Error(IShell shell, string message)
 		{
-			shell.Print("load", @"\b\cf1Error:\b0\cf2\i  " + message);
-			return false;
+			return Format.Error(shell, Name, message);
 		}
 	}
 }

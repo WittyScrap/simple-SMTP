@@ -41,9 +41,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DATACommand.cs" />
+    <Compile Include="HELOCommand.cs" />
+    <Compile Include="MAILCommand.cs" />
+    <Compile Include="NOOPCommand.cs" />
+    <Compile Include="QUITCommand.cs" />
+    <Compile Include="RCPTCommand.cs" />
+    <Compile Include="RSETCommand.cs" />
+    <Compile Include="SMPLCommand.cs" />
+    <Compile Include="SMTPResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ISMTPCommand.cs" />
+    <Compile Include="SMTPCodes.cs" />
+    <Compile Include="SMTPParser.cs" />
     <Compile Include="SMTPServer.cs" />
     <Compile Include="SMTPSession.cs" />
+    <Compile Include="SMTPManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Server\Server.csproj">

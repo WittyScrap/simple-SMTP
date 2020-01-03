@@ -103,7 +103,7 @@ namespace VariableManagement
 
 			if (_fields[fieldName].GetType() != newValue.GetType())
 			{
-				throw new Exception("Error: Could not assign " + newValue.GetType() + " value of " +
+				throw new Exception("Could not assign " + newValue.GetType() + " value of " +
 									newValue.ToString() + " to field " + fieldName + " of type " +
 									_fields[fieldName].GetType() + "!");
 			}
