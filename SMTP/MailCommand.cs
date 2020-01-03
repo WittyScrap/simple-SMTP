@@ -4,7 +4,7 @@ using Shell;
 using Client;
 using System.Collections.Generic;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Manages mail sending and receival (SMTP equivalent: MAIL/RCPT).
@@ -86,67 +86,64 @@ namespace SMTP
 
 				bool hasData = args.Either(out string data, "data");
 
-				if (!hasData)
+				if (!hasData && args.Either<object>(out _, "block"))
 				{
-					if (!args.Either<object>(out _, "block"))
-					{
-						return Format.Error(clientShell, Name, "No data/block argument detected, please refer to the help screen.");
-					}
-					else
-					{
-						// Get contents
-						Multiline form = new Multiline();
-						form.ShowDialog();
+					// Get contents
+					Multiline form = new Multiline();
+					form.ShowDialog();
 
-						// Form has finished...
-						data = form.Value;
-					}
+					// Form has finished...
+					data = form.Value;
+					hasData = !string.IsNullOrWhiteSpace(data);
 				}
 
 				clientShell.Listen = false; // Manual response management.
+				SMTPResponse lastResponse;
 
 				try
 				{
-					clientShell.Send($"MAIL FROM:<{sender}>\r\n");
+					lastResponse = Send(clientShell, $"MAIL FROM: <{sender}>\r\n");
 
 					// Expect 250 OK
-					if (!clientShell.TryReceive(out string message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+					if (lastResponse.ResponseCode != SMTPResponse.Code.Success)
 					{
-						throw new SMTPException($"Invalid response: {message}" ?? "No response received on MAIL command.");
+						throw new SMTPException($"Invalid response: [{lastResponse.ResponseCode}] {lastResponse.Message}");
 					}
 					
 					foreach (string receiver in receivers)
 					{
-						clientShell.Send($"RCPT TO:<{receiver}>\r\n");
+						lastResponse = Send(clientShell, $"RCPT TO: <{receiver}>\r\n");
 
 						// Expect 250 OK
-						if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+						if (lastResponse.ResponseCode != SMTPResponse.Code.Success)
 						{
-							throw new SMTPException($"Invalid response: {message}" ?? $"No response received on RCPT command for address: {receiver}.");
+							throw new SMTPException($"Invalid response: [{lastResponse.ResponseCode}] {lastResponse.Message}");
 						}
 					}
 
-					clientShell.Send("DATA\r\n");
+					lastResponse = Send(clientShell, "DATA\r\n");
 
 					// Expect 354 End data with <CR><LF>.<CR><LF>
-					if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Redirect)
+					if (lastResponse.ResponseCode != SMTPResponse.Code.Redirect)
 					{
-						throw new SMTPException($"Invalid response: {message}" ?? "No response received on DATA command.");
+						throw new SMTPException($"Invalid response: [{lastResponse.ResponseCode}] {lastResponse.Message}");
 					}
 
-					string[] segments = data.Split('\n', '\r');
-
-					foreach (string dataSegment in segments)
+					if (hasData)
 					{
-						clientShell.Send(dataSegment + "\r\n");
+						lastResponse = Send(clientShell, data + "\r\n.\r\n");
+
+						// Expect 250 OK
+						if (lastResponse.ResponseCode != SMTPResponse.Code.Success)
+						{
+							throw new SMTPException($"Invalid response: [{lastResponse.ResponseCode}] {lastResponse.Message}");
+						}
+
+						clientShell.Print(Name, $"Succesfully sent mail from {sender} to all recipients.");
 					}
-
-					clientShell.Send("\r\n.\r\n");
-
-					// Expect 250 OK
-					if (!clientShell.TryReceive(out message) || new SMTPResponse(message).ResponseCode != SMTPResponse.Code.Success)
+					else
 					{
-						throw new SMTPException($"Invalid response: {message}" ?? "No response received on . (end of DATA) command.");
+						clientShell.Print(Name, @"Mail setup complete but no data was provided, send data manually.");
 					}
 				}
 				catch (IOException e)
@@ -168,6 +165,25 @@ namespace SMTP
 			{
 				return Format.Error(sourceShell, Name, "This shell type is not supported by this command, please use a ClientShell instead.");
 			}
+		}
+
+		/// <summary>
+		/// Sends a message to the remote host connected on the given shell.
+		/// </summary>
+		private SMTPResponse Send(ClientShell shell, string message)
+		{
+			shell.Send(message, true);
+			return GetResponse(shell);
+		}
+
+		/// <summary>
+		/// Blocks the current thread until a response has been received, parses it and returns
+		/// it as an instance of a <see cref="SMTPResponse"/>.
+		/// </summary>
+		private SMTPResponse GetResponse(ClientShell shell)
+		{
+			string message = shell.WaitForResponse();
+			return new SMTPResponse(message);
 		}
 	}
 }

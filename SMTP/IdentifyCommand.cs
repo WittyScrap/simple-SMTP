@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// A simple identifier command (RFC821 equivalent: HELO).
@@ -43,7 +43,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send($"HELO {domain}\r\n");
+					clientShell.Send($"HELO {domain}\r\n", true);
 				}
 				catch (IOException e)
 				{

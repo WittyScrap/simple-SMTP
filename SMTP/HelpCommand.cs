@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Asks the remote SMTP server to provide its HELP command (SMTP equivalent: HELP).
@@ -38,7 +38,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send($"HELP {command}\r\n");
+					clientShell.Send($"HELP {command}\r\n", true);
 				}
 				catch (IOException e)
 				{

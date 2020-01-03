@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Manages a generic SMTP exception.

@@ -2,7 +2,7 @@
 using Client;
 using System.IO;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Sends a command to reset the remote SMTP server's state (SMTP equivalent: RSET).
@@ -30,7 +30,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send("RSET\r\n");
+					clientShell.Send("RSET\r\n", true);
 				}
 				catch (IOException e)
 				{

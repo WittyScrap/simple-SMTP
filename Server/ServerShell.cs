@@ -33,7 +33,7 @@ namespace Server
 		{
 			if (_serverProgram == null)
 			{
-				throw new InvalidOperationException("Could not start a server because no server program was loaded, please use the program command to load a server program.");
+				throw new InvalidOperationException("Could not start a server because no server program was loaded, please use the server command to load a server program.");
 			}
 
 			if (_serverStarted)
@@ -52,6 +52,7 @@ namespace Server
 			IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
 
 			_read = new List<Socket>();
+			_handlers = new List<Thread>();
 			_clients = new Dictionary<Socket, ClientState>();
 
 			_listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -78,6 +79,8 @@ namespace Server
 				_read.Clear();
 				_read.Add(_listener);
 
+				_handlers.RemoveAll(thread => !thread.IsAlive);
+
 				foreach (ClientState client in _clients.Values)
 				{
 					_read.Add(client.Connection);
@@ -100,7 +103,9 @@ namespace Server
 						}
 						else
 						{
-							HandleConnection(socket);
+							Thread handler = new Thread(() => HandleConnection(socket));
+							_handlers.Add(handler);
+							handler.Start();
 						}
 					}
 				}
@@ -129,6 +134,11 @@ namespace Server
 		/// <param name="connection">The open connection.</param>
 		private void HandleConnection(Socket connection)
 		{
+			if (!_clients.ContainsKey(connection))
+			{
+				return;
+			}
+
 			ClientState client = _clients[connection];
 			int bytesReceived = 0;
 
@@ -157,13 +167,17 @@ namespace Server
 			}
 
 			string data = Decode(client.ReadBuffer);
-			string response = _serverProgram.HandleInput(connection, data);
-
-			byte[] sendBytes = Encode(response);
-			connection.Send(sendBytes);
 
 			EnqueueCommand(() => Print(hostName, data));
-			EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
+			string response = _serverProgram.HandleInput(connection, data);
+
+			if (response != null)
+			{
+				byte[] sendBytes = Encode(response);
+				connection.Send(sendBytes);
+
+				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
+			}
 
 			ClearBuffer(client.ReadBuffer);
 		}
@@ -200,7 +214,7 @@ namespace Server
 		{
 			if (!_serverStarted)
 			{
-				throw new InvalidOperationException("Cannot stop a server that is not running!");
+				throw new InvalidOperationException("No server is currently running, skipping...");
 			}
 
 			_serverStarted = false;
@@ -275,6 +289,7 @@ namespace Server
 		/* ------------ */
 
 		private List<Socket> _read;
+		private List<Thread> _handlers;
 		private Dictionary<Socket, ClientState> _clients;
 		private Socket _listener;
 

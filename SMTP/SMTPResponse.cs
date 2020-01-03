@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Represents all necessary data for an SMTP response.
@@ -45,8 +45,17 @@ namespace SMTP
 		/// <param name="source">The SMTP source message.</param>
 		public SMTPResponse(string source)
 		{
+			if (source.Length < 5)
+			{
+				ResponseCode = Code.Invalid;
+				Response = "000";
+				Message = source;
+
+				return;
+			}
+
 			string code = source.Substring(0, 3);
-			string body = source.Substring(2, source.Length - 2);
+			string body = source.Substring(4);
 
 			if (int.TryParse(code[0].ToString(), out int codeNumber))
 			{

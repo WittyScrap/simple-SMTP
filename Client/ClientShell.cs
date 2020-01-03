@@ -66,10 +66,10 @@ namespace Client
 				}
 			});
 
+			IsConnected = true;
+
 			_senderThread.Start();
 			_listenThread.Start();
-
-			IsConnected = true;
 		}
 
 		/// <summary>
@@ -116,6 +116,8 @@ namespace Client
 			{
 				buffer[i] = 0;
 			}
+
+			_connection.ReceiveTimeout = (int)Variables["network.timeout"];
 
 			try
 			{
@@ -172,11 +174,33 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Blocks the current thread until a response has been given by the remote host.
+		/// </summary>
+		/// <returns>The received data. If the socket disconnects before any data has been sent, this will be an empty string.</returns>
+		public string WaitForResponse()
+		{
+			byte[] receivedBytes = new byte[BufferSize];
+			string message = "";
+
+			while (IsConnected && (ReceiveOnce(receivedBytes) > 0 || message == ""))
+			{
+				message += Decode(receivedBytes);
+			}
+
+			return message;
+		}
+
+		/// <summary>
 		/// Sends a message to the remote host.
 		/// </summary>
 		/// <param name="message">The message to send to the remote host.</param>
-		public void Send(string message)
+		public void Send(string message, bool ignoreCarriageRule = false)
 		{
+			if (!ignoreCarriageRule && Variables.Get<bool>("network.add_carriage_return"))
+			{
+				message += "\r\n";
+			}
+
 			if (!IsConnected)
 			{
 				throw new IOException("Shell not connected, could not read from or write to remote host.");
@@ -227,6 +251,8 @@ namespace Client
 
 				if (IsConnected)
 				{
+					_connection.SendTimeout = (int)Variables["network.timeout"];
+
 					try
 					{
 						_connection.Send(Encode(nextMessage));

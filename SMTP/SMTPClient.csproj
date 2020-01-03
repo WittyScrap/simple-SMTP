@@ -7,8 +7,8 @@
     <ProjectGuid>{E0C5AB17-2E14-4AEC-81B6-0C59A1DDE876}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SMTP</RootNamespace>
-    <AssemblyName>SMTP</AssemblyName>
+    <RootNamespace>SMTPClient</RootNamespace>
+    <AssemblyName>SMTPClient</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

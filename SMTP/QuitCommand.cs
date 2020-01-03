@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Closes an existing SMTP connection with a remote host (SMTP equivalent: QUIT).
@@ -35,7 +35,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send("QUIT\r\n");
+					clientShell.Send("QUIT\r\n", true);
 				}
 				catch (IOException e)
 				{

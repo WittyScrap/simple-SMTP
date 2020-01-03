@@ -2,7 +2,7 @@
 using Client;
 using System.IO;
 
-namespace SMTP
+namespace SMTPClient
 {
 	/// <summary>
 	/// Performs no operation but expects a response (SMTP equivalent: NOOP).
@@ -30,7 +30,7 @@ namespace SMTP
 
 				try
 				{
-					clientShell.Send("NOOP\r\n");
+					clientShell.Send("NOOP\r\n", true);
 				}
 				catch (IOException e)
 				{
