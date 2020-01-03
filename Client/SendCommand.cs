@@ -36,12 +36,12 @@ namespace Client
 
                 if (!clientShell.IsConnected)
                 {
-                    return Error(clientShell, "Cannot send data through a disconnected shell, use the connect command before using the send command.");
+                    return Format.Error(clientShell, Name, "Cannot send data through a disconnected shell, use the connect command before using the send command.");
                 }
 
 				if (args == null || args.Count != 1)
 				{
-					return Error(clientShell, "Invalid argument count.");
+					return Format.Error(clientShell, Name, "Invalid argument count.");
 				}
 
                 bool hasData    = args.Either(out object packedMessage, "data", "d");
@@ -49,7 +49,7 @@ namespace Client
 
 				if (!hasData && !wantsBlock)
 				{
-					return Error(clientShell, "Missing data/block argument, please refer to the help screen for more information.");
+					return Format.Error(clientShell, Name, "Missing data/block argument, please refer to the help screen for more information.");
 				}
 
                 string message;
@@ -75,27 +75,15 @@ namespace Client
 				}
 				catch (Exception e)
 				{
-					return Error(clientShell, e.Message);
+					return Format.Error(clientShell, Name, e.Message);
 				}
 
 				return true;
 			}
 			else
 			{
-				return Error(sourceShell, "Send is not supported on this shell.");
+				return Format.Error(sourceShell, Name, "Send is not supported on this shell.");
 			}
-		}
-
-		/// <summary>
-		/// Displays an error message and returns the default error
-		/// value of false.
-		/// </summary>
-		/// <param name="shell">The shell to display the message on.</param>
-		/// <param name="message">The message to display.</param>
-		/// <returns>A constant value of false.</returns>
-		private bool Error(IShell shell, string message)
-		{
-			return Format.Error(shell, "send", message);
 		}
 	}
 }

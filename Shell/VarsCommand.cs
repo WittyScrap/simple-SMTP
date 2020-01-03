@@ -25,7 +25,7 @@ namespace Shell
 		{
 			if (sourceShell.Variables == null)
 			{
-				return Error(sourceShell, "Variables could not be parsed, please check the environment.vars file for errors.");
+				return Format.Error(sourceShell, Name, "Variables could not be parsed, please check the environment.vars file for errors.");
 			}
 
 			string variableName = null;
@@ -44,7 +44,7 @@ namespace Shell
 			{
 				if (variableName == null)
 				{
-					return Error(sourceShell, "Incomplete vars command: set flag was found, but no variable name was provided.");
+					return Format.Error(sourceShell, Name, "Incomplete vars command: set flag was found, but no variable name was provided.");
 				}
 
 				bool hasValue = args.Either(out string variableValue, "v", "value");
@@ -52,12 +52,12 @@ namespace Shell
 
 				if (!hasValue)
 				{
-					return Error(sourceShell, "Incomplete vars command: set flag was found, but no value was provided.");
+					return Format.Error(sourceShell, Name, "Incomplete vars command: set flag was found, but no value was provided.");
 				}
 
 				if (!VariablesParser.TryParse(variableValue, out object parsedValue))
 				{
-					return Error(sourceShell, "Invalid value type provided.");
+					return Format.Error(sourceShell, Name, "Invalid value type provided.");
 				}
 
 				try
@@ -66,7 +66,7 @@ namespace Shell
 				}
 				catch (Exception e)
 				{
-					return Error(sourceShell, e.Message);
+					return Format.Error(sourceShell, Name, e.Message);
 				}
 
 				if (shouldShow)
@@ -119,18 +119,6 @@ namespace Shell
 			}
 
 			return tabs;
-		}
-
-		/// <summary>
-		/// Displays an error message and returns the default error
-		/// value of false.
-		/// </summary>
-		/// <param name="shell">The shell to display the message on.</param>
-		/// <param name="message">The message to display.</param>
-		/// <returns>A constant value of false.</returns>
-		private bool Error(IShell shell, string message)
-		{
-			return Format.Error(shell, Name, message);
 		}
 	}
 }

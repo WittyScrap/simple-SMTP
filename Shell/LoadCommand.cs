@@ -55,7 +55,7 @@ namespace Shell
 								}
 								catch (ArgumentException)
 								{
-									return Error(asyncShell, "Command pack could not be integrated, perhaps it has already been added?");
+									return Format.Error(sourceShell, Name, "Command pack could not be integrated, perhaps it has already been added?");
 								}
 
 								found++;
@@ -64,7 +64,7 @@ namespace Shell
 
 						if (found == 0)
 						{
-							return Error(asyncShell, "No ICommand instances could be found in given DLL pack.");
+							return Format.Error(sourceShell, Name, "No ICommand instances could be found in given DLL pack.");
 						}
 						else
 						{
@@ -75,30 +75,18 @@ namespace Shell
 					}
 					else
 					{
-						return Error(asyncShell, "Pack file does not exist in the current directory.");
+						return Format.Error(sourceShell, Name, "Pack file does not exist in the current directory.");
 					}
 				}
 				else
 				{
-					return Error(asyncShell, "Pack name argument missing (--pack/-p)!");
+					return Format.Error(sourceShell, Name, "Pack name argument missing (--pack/-p)!");
 				}
 			}
 			else
 			{
-				return Error(sourceShell, "This shell is not supported by the load command.");
+				return Format.Error(sourceShell, Name, "This shell is not supported by the load command.");
 			}
-		}
-
-		/// <summary>
-		/// Displays an error message and returns the default error
-		/// value of false.
-		/// </summary>
-		/// <param name="shell">The shell to display the message on.</param>
-		/// <param name="message">The message to display.</param>
-		/// <returns>A constant value of false.</returns>
-		private bool Error(IShell shell, string message)
-		{
-			return Format.Error(shell, Name, message);
 		}
 	}
 }
