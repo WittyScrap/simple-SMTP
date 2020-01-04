@@ -46,6 +46,23 @@ namespace SMTPServer
 		}
 
 		/// <summary>
+		/// Handles checking whether a command is unsupported or invalid.
+		/// </summary>
+		/// <param name="command">The command to verify.</param>
+		/// <returns>The appropriate response code and message.</returns>
+		private string UnrecognisedCommand(string command)
+		{
+			if (command.Length < 6 || !SMTPCommandLookup.CommandExists(command.Substring(0, 4)))
+			{
+				return SMTPCodes.Compose(SMTPCodes.ClientError.SNTX, "Invalid or unrecognised command.");
+			}
+			else
+			{
+				return SMTPCodes.Compose(SMTPCodes.ClientError.NIMP, "Command not implemented.");
+			}
+		}
+
+		/// <summary>
 		/// Processes an ISMTP command.
 		/// </summary>
 		/// <param name="command"></param>
@@ -54,7 +71,7 @@ namespace SMTPServer
 		{
 			if (!SMTPParser.Parse(command, out ISMTPCommand parsedCommand) && State != SessionState.ReadingData)
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.SNTX, "Invalid or unrecognised command.");
+				return UnrecognisedCommand(command);
 			}
 
 			switch (State)
