@@ -205,10 +205,7 @@ namespace Server
 
 			if (response != null)
 			{
-				byte[] sendBytes = Encode(response);
-				connection.Send(sendBytes);
-
-				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
+				SendResponse(connection, response);
 			}
 
 			ClearBuffer(client.ReadBuffer);
@@ -216,6 +213,24 @@ namespace Server
 			foreach (Socket disconnected in _serverProgram.Disconnected)
 			{
 				RemoveConnection(disconnected);
+			}
+		}
+
+		/// <summary>
+		/// Sends a response to a given connection, with support for multiple lines.
+		/// </summary>
+		/// <param name="multilineResponse">The response to send, will be split across carriage return/linefeed sequences.</param>
+		private void SendResponse(Socket connection, string multilineResponse)
+		{
+			string hostName = GetRemote(connection);
+			string[] sections = multilineResponse.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+
+			foreach (string response in sections)
+			{
+				byte[] sendBytes = Encode(response);
+				connection.Send(sendBytes);
+
+				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
 			}
 		}
 
