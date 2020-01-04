@@ -9,7 +9,7 @@ namespace SMTPServer
 	/// <summary>
 	/// Manages a QUIT command.
 	/// </summary>
-	class QUITCommand : SMPLCommand
+	class QUITCommand : SMTPCommand
 	{
 		/// <summary>
 		/// The name of the command.

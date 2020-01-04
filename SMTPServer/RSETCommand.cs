@@ -9,7 +9,7 @@ namespace SMTPServer
 	/// <summary>
 	/// Manages a RSET command.
 	/// </summary>
-	class RSETCommand : SMPLCommand
+	class RSETCommand : SMTPCommand
 	{
 		/// <summary>
 		/// The name of the command (RSET).

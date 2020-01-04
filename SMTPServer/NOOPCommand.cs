@@ -9,7 +9,7 @@ namespace SMTPServer
 	/// <summary>
 	/// Manages a NOOP command.
 	/// </summary>
-	class NOOPCommand : SMPLCommand
+	class NOOPCommand : SMTPCommand
 	{
 		/// <summary>
 		/// The name of the command (NOOP).

@@ -50,6 +50,10 @@ namespace SMTPServer
 					parsedCommand = new NOOPCommand(command);
 					break;
 
+				case "HELP":
+					parsedCommand = new HELPCommand(command);
+					break;
+
 				case "QUIT":
 					parsedCommand = new QUITCommand(command);
 					break;

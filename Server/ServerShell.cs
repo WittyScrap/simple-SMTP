@@ -238,10 +238,21 @@ namespace Server
 		/// <returns>The name of the connection's endpoint.</returns>
 		private string GetRemote(Socket connection)
 		{
-			IPEndPoint endPoint = (IPEndPoint)connection.RemoteEndPoint;
-			IPAddress ipAddress = endPoint.Address;
+			try
+			{
+				IPEndPoint endPoint = (IPEndPoint)connection.RemoteEndPoint;
+				IPAddress ipAddress = endPoint.Address;
 
-			return ipAddress.ToString() + ":" + endPoint.Port;
+				return ipAddress.ToString() + ":" + endPoint.Port;
+			}
+			catch (SocketException)
+			{
+				return "disconnected";
+			}
+			catch (ObjectDisposedException)
+			{
+				return "disposed";
+			}
 		}
 
 		/// <summary>

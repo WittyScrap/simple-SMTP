@@ -9,7 +9,7 @@ namespace SMTPServer
 	/// <summary>
 	/// Source command for any command that only contians a header.
 	/// </summary>
-	abstract class SMPLCommand : ISMTPCommand
+	abstract class SMTPCommand : ISMTPCommand
 	{
 		/// <summary>
 		/// The header of the command.
@@ -39,9 +39,9 @@ namespace SMTPServer
 		/// <summary>
 		/// Creates a new command.
 		/// </summary>
-		public SMPLCommand(string source)
+		public SMTPCommand(string source)
 		{
-			IsFormatted = source.Substring(source.Length - 2) == "\r\n";
+			IsFormatted = source.Length >= 6 && source.Substring(source.Length - 2) == "\r\n";
 		}
 	}
 }

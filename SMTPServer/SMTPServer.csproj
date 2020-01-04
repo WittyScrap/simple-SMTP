@@ -43,12 +43,13 @@
   <ItemGroup>
     <Compile Include="DATACommand.cs" />
     <Compile Include="HELOCommand.cs" />
+    <Compile Include="HELPCommand.cs" />
     <Compile Include="MAILCommand.cs" />
     <Compile Include="NOOPCommand.cs" />
     <Compile Include="QUITCommand.cs" />
     <Compile Include="RCPTCommand.cs" />
     <Compile Include="RSETCommand.cs" />
-    <Compile Include="SMPLCommand.cs" />
+    <Compile Include="SMTPCommand.cs" />
     <Compile Include="SMTPCommandLookup.cs" />
     <Compile Include="SMTPResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

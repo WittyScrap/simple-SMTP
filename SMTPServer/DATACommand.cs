@@ -9,7 +9,7 @@ namespace SMTPServer
 	/// <summary>
 	/// Handles a DATA command.
 	/// </summary>
-	class DATACommand : SMPLCommand
+	class DATACommand : SMTPCommand
 	{
 		/// <summary>
 		/// The name of the command (DATA).
