@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Server;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -10,8 +11,13 @@ namespace SMTPServer
 	/// <summary>
 	/// Represents a single SMTP session running on a single client.
 	/// </summary>
-	class SMTPSession
+	class SMTPSession : IDisposable
 	{
+		/// <summary>
+		/// Handles whether this session should be disconnected.
+		/// </summary>
+		public bool ShouldQuit => _stateMachine.State < 0;
+
 		/// <summary>
 		/// Handles an incoming message.
 		/// </summary>
@@ -26,6 +32,22 @@ namespace SMTPServer
 			{
 				return _stateMachine.Process(messageData);
 			}
+		}
+
+		/// <summary>
+		/// Which message should be sent back when a session has been initialised.
+		/// </summary>
+		public string OnWelcome()
+		{
+			return SMTPCodes.Compose(SMTPCodes.Status.REDY, "Simple Mail Transfer Service Ready.");
+		}
+
+		/// <summary>
+		/// Clears any memory allocated for this session.
+		/// </summary>
+		public void Dispose()
+		{
+			_stateMachine.Dispose();
 		}
 
 		/// <summary>

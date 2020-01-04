@@ -17,6 +17,16 @@ namespace SMTPServer
 		public override string Name => "QUIT";
 
 		/// <summary>
+		/// Overrides success code for QUIT (221).
+		/// </summary>
+		protected override string SuccessCode => SMTPCodes.Status.CLSE;
+
+		/// <summary>
+		/// The message to display as a response to a QUIT message.
+		/// </summary>
+		protected override string SuccessMessage => "Service closing transmission channel.";
+
+		/// <summary>
 		/// Creates a new QUIT command.
 		/// </summary>
 		public QUITCommand(string source) : base(source)

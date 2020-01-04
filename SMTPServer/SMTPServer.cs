@@ -25,6 +25,11 @@ namespace SMTPServer
 		}
 
 		/// <summary>
+		/// Handles all sockets that have received a QUIT command.
+		/// </summary>
+		public HashSet<Socket> Disconnected { get; } = new HashSet<Socket>();
+
+		/// <summary>
 		/// Handles responding to any incoming command.
 		/// </summary>
 		/// <param name="connection"></param>
@@ -32,12 +37,29 @@ namespace SMTPServer
 		/// <returns></returns>
 		public string HandleInput(Socket connection, string data)
 		{
-			if (!_activeSessions.ContainsKey(connection))
+			string message = _activeSessions[connection].OnMessage(data);
+
+			if (_activeSessions[connection].ShouldQuit)
 			{
-				_activeSessions[connection] = new SMTPSession();
+				Disconnected.Add(connection);
+				_activeSessions[connection].Dispose();
+				_activeSessions.Remove(connection);
 			}
 
-			return _activeSessions[connection].OnMessage(data);
+			return message;
+		}
+
+		/// <summary>
+		/// Newly accepted connection.
+		/// </summary>
+		/// <param name="connection">The connection that has just been created.</param>
+		/// <returns>The SMTP welcome message.</returns>
+		public string OnConnection(Socket connection)
+		{
+			SMTPSession acceptedSession = new SMTPSession();
+			_activeSessions[connection] = acceptedSession;
+
+			return acceptedSession.OnWelcome();
 		}
 	}
 }

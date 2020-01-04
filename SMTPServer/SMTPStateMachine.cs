@@ -9,13 +9,14 @@ namespace SMTPServer
 	/// <summary>
 	/// Handles the state of an <see cref="SMTPSession"/>.
 	/// </summary>
-	class SMTPStateMachine
+	class SMTPStateMachine : IDisposable
 	{
 		/// <summary>
 		/// The current state of the SMTP session.
 		/// </summary>
 		public enum SessionState
 		{
+			Unavailable = -1,
 			Connected,
 			Identified,
 			Recipients,
@@ -30,6 +31,11 @@ namespace SMTPServer
 		public bool CheckStateless(string command, out string response)
 		{
 			response = null;
+
+			if (State < 0) // Invalid state.
+			{
+				return false;
+			}
 
 			if (SMTPParser.Parse(command, out ISMTPCommand parsedCommand))
 			{
@@ -82,7 +88,7 @@ namespace SMTPServer
 				case "RSET":
 					if (command.IsFormatted)
 					{
-						ResetState();
+						Reset();
 					}
 					return command.Response;
 
@@ -212,9 +218,9 @@ namespace SMTPServer
 		{
 			_mailData += messageData;
 
-			if (_mailData.Substring(_mailData.Length - 5) == "\r\n.\r\n")
+			if (_mailData.Length >= 5 && _mailData.Substring(_mailData.Length - 5) == "\r\n.\r\n")
 			{
-				ResetState();
+				Reset();
 				return SMTPCodes.Compose(SMTPCodes.Status.SVOK, "Mail composition OK, sent.");
 			}
 
@@ -224,17 +230,14 @@ namespace SMTPServer
 		/// <summary>
 		/// Resets the state of the server to <see cref="SessionState.Identified"/>.
 		/// </summary>
-		private void ResetState()
+		private void Reset()
 		{
 
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
 
-			if (State > SessionState.Identified)
-			{
-				State = SessionState.Identified;
-			}
+			State = SessionState.Connected;
 		}
 
 		/// <summary>
@@ -242,10 +245,20 @@ namespace SMTPServer
 		/// </summary>
 		private void Quit()
 		{
-			ResetState();
-			_domain = "";
+			State = SessionState.Unavailable;
+		}
 
-			State = SessionState.Connected;
+		/// <summary>
+		/// Clears the current session's state machine.
+		/// </summary>
+		public void Dispose()
+		{
+			_recipients.Clear();
+
+			_domain = null;
+			_recipients = null;
+			_sender = null;
+			_mailData = null;
 		}
 
 		/// <summary>
@@ -259,7 +272,7 @@ namespace SMTPServer
 		/// <summary>
 		/// Message to be returned in the event of the server finding itself in an invalid state.
 		/// </summary>
-		private static string BadState => SMTPCodes.ServerError.SVER + " Invalid server state.";
+		private static string BadState => SMTPCodes.Compose(SMTPCodes.ServerError.SVER, "Invalid server state.");
 
 		/// <summary>
 		/// Message to be returned when a correct command is issued in the wrong occasion.

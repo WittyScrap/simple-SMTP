@@ -27,6 +27,19 @@ namespace Server
 		}
 
 		/// <summary>
+		/// Removes a specific connection.
+		/// </summary>
+		/// <param name="source"></param>
+		private void RemoveConnection(Socket connection)
+		{
+			if (_clients.ContainsKey(connection))
+			{
+				connection.Close();
+				_clients.Remove(connection);
+			}
+		}
+
+		/// <summary>
 		/// Runs the server.
 		/// </summary>
 		public void StartServer(string host, int port)
@@ -135,6 +148,17 @@ namespace Server
 
 			EnqueueCommand(() => Print(entityMachine, $"Accepting connection from: {GetRemote(client)}."));
 
+			string hostName = GetRemote(client);
+			string init = _serverProgram.OnConnection(client);
+
+			if (init != null)
+			{
+				byte[] sendBytes = Encode(init);
+				client.Send(sendBytes);
+
+				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", init));
+			}
+
 			_clients[client] = state;
 		}
 
@@ -158,10 +182,9 @@ namespace Server
 			}
 			catch (SocketException e)
 			{
-				connection.Close();
-				_clients.Remove(connection);
+				RemoveConnection(connection);
+				EnqueueCommand(() => Print(entityMachine, $"Connection receive exception: {e.ToString()}, connection closed."));
 
-				EnqueueCommand(() => Print(entityMachine, $"Connection receive exception: {e.ToString()}."));
 				return;
 			}
 
@@ -169,10 +192,9 @@ namespace Server
 
 			if (bytesReceived == 0)
 			{
-				connection.Close();
-				_clients.Remove(connection);
-
+				RemoveConnection(connection);
 				EnqueueCommand(() => Print(entityMachine, $"Connection closed with: {hostName}."));
+
 				return;
 			}
 
@@ -190,6 +212,11 @@ namespace Server
 			}
 
 			ClearBuffer(client.ReadBuffer);
+
+			foreach (Socket disconnected in _serverProgram.Disconnected)
+			{
+				RemoveConnection(disconnected);
+			}
 		}
 
 		/// <summary>
