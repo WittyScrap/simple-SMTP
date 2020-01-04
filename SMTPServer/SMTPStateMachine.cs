@@ -9,17 +9,34 @@ namespace SMTPServer
 	/// <summary>
 	/// Handles the state of an <see cref="SMTPSession"/>.
 	/// </summary>
-	class SMTPManager
+	class SMTPStateMachine
 	{
 		/// <summary>
 		/// The current state of the SMTP session.
 		/// </summary>
-		enum SessionState
+		public enum SessionState
 		{
 			Connected,
 			Identified,
 			Recipients,
 			ReadingData
+		}
+
+		/// <summary>
+		/// Attempts to run a stateless command.
+		/// </summary>
+		/// <param name="response">The response to the command.</param>
+		/// <returns>True if the command has been detected to be stateless, false otherwise.</returns>
+		public bool CheckStateless(string command, out string response)
+		{
+			response = null;
+
+			if (SMTPParser.Parse(command, out ISMTPCommand parsedCommand))
+			{
+				response = OnStateAny(parsedCommand);
+			}
+
+			return response != null;
 		}
 
 		/// <summary>
@@ -29,22 +46,12 @@ namespace SMTPServer
 		/// <returns></returns>
 		public string Process(string command)
 		{
-			if (!SMTPParser.Parse(command, out ISMTPCommand parsedCommand) && _state != SessionState.ReadingData)
+			if (!SMTPParser.Parse(command, out ISMTPCommand parsedCommand) && State != SessionState.ReadingData)
 			{
 				return SMTPCodes.Compose(SMTPCodes.ClientError.SNTX, "Invalid or unrecognised command.");
 			}
 
-			if (_state != SessionState.ReadingData)
-			{
-				string statelessResponse = OnStateAny(parsedCommand);
-
-				if (statelessResponse != null)
-				{
-					return statelessResponse;
-				}
-			}
-
-			switch (_state)
+			switch (State)
 			{
 				case SessionState.Connected:
 					return OnStateConnected(parsedCommand);
@@ -112,7 +119,7 @@ namespace SMTPServer
 				if (helo.IsFormatted && helo.Domain != null)
 				{
 					_domain = helo.Domain;
-					_state++;
+					State++;
 				}
 
 				return helo.Response;
@@ -135,7 +142,7 @@ namespace SMTPServer
 				if (mail.IsFormatted)
 				{
 					_sender = mail.Address;
-					_state++;
+					State++;
 
 					// No need to verify mailboxes for now, send mail...
 					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, sending from {_sender}.");
@@ -186,7 +193,7 @@ namespace SMTPServer
 
 					if (data.IsFormatted)
 					{
-						_state++;
+						State++;
 					}
 
 					return data.Response;
@@ -219,11 +226,15 @@ namespace SMTPServer
 		/// </summary>
 		private void ResetState()
 		{
+
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
 
-			_state = SessionState.Identified;
+			if (State > SessionState.Identified)
+			{
+				State = SessionState.Identified;
+			}
 		}
 
 		/// <summary>
@@ -234,13 +245,13 @@ namespace SMTPServer
 			ResetState();
 			_domain = "";
 
-			_state = SessionState.Connected;
+			State = SessionState.Connected;
 		}
 
 		/// <summary>
 		/// Creates a new SMTP state machine.
 		/// </summary>
-		public SMTPManager()
+		public SMTPStateMachine()
 		{
 			_recipients = new HashSet<string>();
 		}
@@ -255,11 +266,15 @@ namespace SMTPServer
 		/// </summary>
 		private static string BadOrder => SMTPCodes.Compose(SMTPCodes.ClientError.ORDR, "Bad sequence of commands.");
 
+		/// <summary>
+		/// The current state of the SMTP session.
+		/// </summary>
+		public SessionState State { get; private set; }
+
 		/* ---------- */
 		/* -- Data -- */
 		/* ---------- */
 
-		private SessionState _state;
 		private string _domain;
 
 		// State-specific data.

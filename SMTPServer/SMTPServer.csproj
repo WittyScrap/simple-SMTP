@@ -56,7 +56,7 @@
     <Compile Include="SMTPParser.cs" />
     <Compile Include="SMTPServer.cs" />
     <Compile Include="SMTPSession.cs" />
-    <Compile Include="SMTPManager.cs" />
+    <Compile Include="SMTPStateMachine.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Server\Server.csproj">

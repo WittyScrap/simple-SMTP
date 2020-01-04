@@ -18,7 +18,14 @@ namespace SMTPServer
 		/// <param name="messageData">The incoming message data.</param>
 		public string OnMessage(string messageData)
 		{
-			return _manager.Process(messageData);
+			if (_stateMachine.State != SMTPStateMachine.SessionState.ReadingData && _stateMachine.CheckStateless(messageData, out string statelessResponse))
+			{
+				return statelessResponse;
+			}
+			else
+			{
+				return _stateMachine.Process(messageData);
+			}
 		}
 
 		/// <summary>
@@ -26,10 +33,10 @@ namespace SMTPServer
 		/// </summary>
 		public SMTPSession()
 		{
-			_manager = new SMTPManager();
+			_stateMachine = new SMTPStateMachine();
 		}
 
 		// The SMTP state machine.
-		SMTPManager _manager;
+		private readonly SMTPStateMachine _stateMachine;
 	}
 }
