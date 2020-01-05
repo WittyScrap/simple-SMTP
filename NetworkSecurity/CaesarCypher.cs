@@ -9,7 +9,7 @@ namespace NetworkSecurity
 	/// <summary>
 	/// Simple caesar cypher to test encryption/decryption and key transportation.
 	/// </summary>
-	class CaesarCypher : IEncryptor
+	public class CaesarCypher : IEncryptor
 	{
 		/// <summary>
 		/// "Encrypts" a message with a given key.
@@ -18,6 +18,11 @@ namespace NetworkSecurity
 		/// <param name="key">The key.</param>
 		public string Encrypt(string data, string key)
 		{
+			if (data == null)
+			{
+				return null;
+			}
+
 			StringBuilder encryptedMessage = new StringBuilder();
 
 			foreach (char letter in data)
@@ -42,6 +47,11 @@ namespace NetworkSecurity
 		/// <param name="key">The key.</param>
 		public string Decrypt(string data, string key)
 		{
+			if (data == null)
+			{
+				return null;
+			}
+
 			StringBuilder encryptedMessage = new StringBuilder();
 
 			foreach (char letter in data)

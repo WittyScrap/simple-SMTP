@@ -1,4 +1,5 @@
-﻿using Shell;
+﻿using NetworkSecurity;
+using Shell;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -158,9 +159,7 @@ namespace Server
 
 			if (init != null)
 			{
-				byte[] sendBytes = Encode(init);
-				client.Send(sendBytes);
-
+				Send(client, init);
 				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", init));
 			}
 
@@ -206,12 +205,17 @@ namespace Server
 
 			string data = Decode(client.ReadBuffer);
 
+			if (Variables.Get<bool>("network.encrypted"))
+			{
+				data = DecryptMessage(data, EncryptionKey);
+			}
+
 			EnqueueCommand(() => Print(hostName, data));
 			string response = _serverProgram.HandleInput(connection, data);
 
 			if (response != null)
 			{
-				SendResponse(connection, response);
+				SendMultiline(connection, response);
 			}
 
 			ClearBuffer(client.ReadBuffer);
@@ -233,7 +237,7 @@ namespace Server
 		/// Sends a response to a given connection, with support for multiple lines.
 		/// </summary>
 		/// <param name="multilineResponse">The response to send, will be split across carriage return/linefeed sequences.</param>
-		private void SendResponse(Socket connection, string multilineResponse)
+		private void SendMultiline(Socket connection, string multilineResponse)
 		{
 			if (multilineResponse == "")
 			{
@@ -250,11 +254,25 @@ namespace Server
 
 			foreach (string response in sections)
 			{
-				byte[] sendBytes = Encode(response);
-				connection.Send(sendBytes);
-
+				Send(connection, response);
 				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", response));
 			}
+		}
+
+		/// <summary>
+		/// Sends a message to a remote connection.
+		/// </summary>
+		/// <param name="connection">The connection to send the message to.</param>
+		/// <param name="message">The message to transmit</param>
+		public void Send(Socket connection, string message)
+		{
+			if (UsingEncryption)
+			{
+				message = EncryptMessage(message, EncryptionKey);
+			}
+
+			byte[] sendBytes = Encode(message);
+			connection.Send(sendBytes);
 		}
 
 		/// <summary>
@@ -342,6 +360,41 @@ namespace Server
 		}
 
 		/// <summary>
+		/// Encrypts a message.
+		/// </summary>
+		private string EncryptMessage(string source, string key)
+		{
+			EncryptedMessage encryptedMessage = new EncryptedMessage(source, null, null); // Not required for now, maybe in the future... the future... future... ture... it's 2am help.
+			encryptedMessage.Encrypt(_encryptor, key);
+			encryptedMessage.RecalculateHash();
+
+			return encryptedMessage.Pack();
+		}
+
+		/// <summary>
+		/// Decrypts a message.
+		/// </summary>
+		private string DecryptMessage(string source, string key)
+		{
+			EncryptedMessage encryptedMessage = EncryptedMessage.Unpack(source);
+
+			if (encryptedMessage != null && encryptedMessage.CompareHash())
+			{
+				encryptedMessage.Decrypt(_encryptor, key);
+				return encryptedMessage.Data;
+			}
+			else if (encryptedMessage != null) // Uh-oh, CompareHash has failed?
+			{
+				EnqueueCommand(() => Print(entityMachine, "Hash comparison failed on read, discarding package."));
+				return null;
+			}
+			else // Cannot dechipher, maybe the server did not pack the message correctly, or at all?
+			{
+				return source;
+			}
+		}
+
+		/// <summary>
 		/// Converts a string into an array of bytes for transferral across
 		/// a network.
 		/// </summary>
@@ -370,6 +423,16 @@ namespace Server
 			; // NOP
 		}
 
+		/// <summary>
+		/// The key to be used during encryption and decryption.
+		/// </summary>
+		private string EncryptionKey { get; } = "gay";
+
+		/// <summary>
+		/// Whether or not this shell is using encryption to communicate with servers.
+		/// </summary>
+		public bool UsingEncryption => Variables.Get<bool>("network.encrypted");
+
 		/* ------------ */
 		/* --- Data --- */
 		/* ------------ */
@@ -381,6 +444,7 @@ namespace Server
 
 		private Thread _selectorThread;
 		private IServerProgram _serverProgram;
+		private IEncryptor _encryptor = new CaesarCypher();
 
 		private bool _serverStarted;
 		private bool _serverIdle;

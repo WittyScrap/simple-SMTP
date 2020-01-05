@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
+using NetworkSecurity;
 
 namespace Client
 {
@@ -160,7 +161,12 @@ namespace Client
             {
                 message += Decode(receivedBytes);
                 any = true;
-            }
+			}
+
+			if (any && UsingEncryption)
+			{
+				message = DecryptMessage(message, EncryptionKey);
+			}
 
 			return any;
 		}
@@ -195,7 +201,47 @@ namespace Client
 				message += Decode(receivedBytes);
 			}
 
+			if (UsingEncryption)
+			{
+				message = DecryptMessage(message, EncryptionKey);
+			}
+
 			return message;
+		}
+
+		/// <summary>
+		/// Encrypts a message.
+		/// </summary>
+		private string EncryptMessage(string source, string key)
+		{
+			EncryptedMessage encryptedMessage = new EncryptedMessage(source, null, null); // Not required for now, maybe in the future... the future... future... ture... it's 2am help.
+			encryptedMessage.Encrypt(_encryptor, key);
+			encryptedMessage.RecalculateHash();
+
+			return encryptedMessage.Pack();
+		}
+
+		/// <summary>
+		/// Decrypts a message.
+		/// </summary>
+		private string DecryptMessage(string source, string key)
+		{
+			EncryptedMessage encryptedMessage = EncryptedMessage.Unpack(source);
+
+			if (encryptedMessage != null && encryptedMessage.CompareHash())
+			{
+				encryptedMessage.Decrypt(_encryptor, key);
+				return encryptedMessage.Data;
+			}
+			else if (encryptedMessage != null) // Uh-oh, CompareHash has failed?
+			{
+				EnqueueCommand(() => Print(entityMachine, "Hash comparison failed on read, discarding package."));
+				return null;
+			}
+			else // Cannot dechipher, maybe the server did not pack the message correctly, or at all?
+			{
+				return source;
+			}
 		}
 
 		/// <summary>
@@ -204,14 +250,19 @@ namespace Client
 		/// <param name="message">The message to send to the remote host.</param>
 		public void Send(string message, bool ignoreCarriageRule = false)
 		{
+			if (!IsConnected)
+			{
+				throw new IOException("Shell not connected, could not read from or write to remote host.");
+			}
+
 			if (!ignoreCarriageRule && Variables.Get<bool>("network.add_carriage_return"))
 			{
 				message += "\r\n";
 			}
 
-			if (!IsConnected)
+			if (UsingEncryption)
 			{
-				throw new IOException("Shell not connected, could not read from or write to remote host.");
+				message = EncryptMessage(message, EncryptionKey);
 			}
 
 			_messageQueue.Enqueue(message);
@@ -336,6 +387,16 @@ namespace Client
 		/// </summary>
 		public bool Listen { get; set; } = true;
 
+		/// <summary>
+		/// The key to be used during encryption and decryption.
+		/// </summary>
+		private string EncryptionKey { get; } = "gay";
+
+		/// <summary>
+		/// Whether or not this shell is using encryption to communicate with servers.
+		/// </summary>
+		public bool UsingEncryption => Variables.Get<bool>("network.encrypted");
+
 		/* ------------ */
 		/* --- Data --- */
 		/* ------------ */
@@ -344,6 +405,7 @@ namespace Client
 		private Thread _senderThread;
 		private Thread _listenThread;
 		private ConcurrentQueue<string> _messageQueue;
+		private IEncryptor _encryptor = new CaesarCypher();
 
 		// -- Network data --
 

@@ -72,11 +72,11 @@ namespace Server
 
 						if (serverName == null)
 						{
-							return Format.Error(serverShell, Name, $"No IServerProgram class found within given DLL{(commandsCount > 0 ? $", but {commandsCount} commands loaded" : "")}.");
+							return Format.Error(serverShell, Name, $"No IServerProgram class found within given DLL{(commandsCount > 0 ? $", but {commandsCount} command(s) loaded" : "")}.");
 						}
 						else
 						{
-							serverShell.Print(Name, $"Succesfully loaded server: {serverName}{(commandsCount > 0 ? $", and {commandsCount} commands loaded" : "")}.");
+							serverShell.Print(Name, $"Succesfully loaded server: {serverName}{(commandsCount > 0 ? $", and {commandsCount} command(s) loaded" : "")}.");
 						}
 
 						return true;
