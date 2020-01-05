@@ -222,8 +222,18 @@ namespace Server
 		/// <param name="multilineResponse">The response to send, will be split across carriage return/linefeed sequences.</param>
 		private void SendResponse(Socket connection, string multilineResponse)
 		{
+			if (multilineResponse == "")
+			{
+				return;
+			}
+
 			string hostName = GetRemote(connection);
-			string[] sections = multilineResponse.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+			LinkedList<string> sections = new LinkedList<string>(multilineResponse.Split(new string[] { "\r\n" }, StringSplitOptions.None));
+
+			if (string.IsNullOrEmpty(sections.Last.Value))
+			{
+				sections.RemoveLast();
+			}
 
 			foreach (string response in sections)
 			{

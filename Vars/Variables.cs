@@ -85,11 +85,21 @@ namespace VariableManagement
 				throw new Exception("Unable to open file: " + fileName);
 			}
 
-			Variables varsObject = new Variables();
-
 			string fileData = File.ReadAllText(fileName);
 
-			string[] strings = SplitAround(fileData, new char[] { '"' }, false).ToArray();
+			return Parse(fileData);
+		}
+
+		/// <summary>
+		/// Parses a raw vars string into a vars object.
+		/// </summary>
+		/// <param name="contents">The contents of the vars string.</param>
+		/// <returns>A parsed vars object.</returns>
+		public static Variables Parse(string contents)
+		{
+			Variables varsObject = new Variables();
+
+			string[] strings = SplitAround(contents, new char[] { '"' }, false).ToArray();
 			string[] tokens = varsObject.GetTokens(strings);
 
 			varsObject.Parse(tokens);

@@ -54,6 +54,10 @@ namespace SMTPServer
 					parsedCommand = new HELPCommand(command);
 					break;
 
+				case "VRFY":
+					parsedCommand = new VRFYCommand(command);
+					break;
+
 				case "QUIT":
 					parsedCommand = new QUITCommand(command);
 					break;

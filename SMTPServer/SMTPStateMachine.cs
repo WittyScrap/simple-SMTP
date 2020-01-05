@@ -124,6 +124,10 @@ namespace SMTPServer
 					}
 					return command.Response;
 
+				case "VRFY":
+					// VRFY contains all necessary work within the command class.
+					return command.Response;
+
 				default:
 					// Nothing stateless, proceed as normal.
 					return null;
@@ -164,10 +168,14 @@ namespace SMTPServer
 
 				if (mail.IsFormatted)
 				{
+					if (!SMTPData.UsernameExists(mail.Address))
+					{
+						return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
+					}
+
 					_sender = mail.Address;
 					State++;
 
-					// No need to verify mailboxes for now, send mail...
 					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, sending from {_sender}.");
 				}
 				else
@@ -194,9 +202,13 @@ namespace SMTPServer
 
 					if (rcpt.IsFormatted)
 					{
+						if (!SMTPData.UsernameExists(rcpt.Address))
+						{
+							return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
+						}
+
 						_recipients.Add(rcpt.Address);
 
-						// No need to verify mailboxes for now, send mail...
 						return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, sending to {rcpt.Address} ({_recipients.Count} total).");
 					}
 					else
@@ -237,7 +249,9 @@ namespace SMTPServer
 
 			if (_mailData.Length >= 5 && _mailData.Substring(_mailData.Length - 5) == "\r\n.\r\n")
 			{
+				SendMail();
 				Reset();
+
 				return SMTPCodes.Compose(SMTPCodes.Status.SVOK, "Mail composition OK, sent.");
 			}
 
@@ -245,11 +259,23 @@ namespace SMTPServer
 		}
 
 		/// <summary>
+		/// Sends a pending mail.
+		/// </summary>
+		private void SendMail()
+		{
+			_mailData = _mailData.Substring(0, _mailData.Length - 5);
+
+			foreach (string receiver in _recipients)
+			{
+				SMTPData.SaveMail(new Mail(_sender, receiver, _mailData));
+			}
+		}
+
+		/// <summary>
 		/// Resets the state of the server to <see cref="SessionState.Identified"/>.
 		/// </summary>
 		private void Reset()
 		{
-
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
