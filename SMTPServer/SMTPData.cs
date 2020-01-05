@@ -173,6 +173,28 @@ namespace SMTPServer
 		}
 
 		/// <summary>
+		/// Hashes a password using SHA256.
+		/// </summary>
+		/// <param name="password">The password to hash.</param>
+		/// <param name="salt">The salt to add prior to salting.</param>
+		/// <returns></returns>
+		public static string HashPassword(string password, string salt)
+		{
+			using (SHA256 hash = SHA256.Create())
+			{
+				byte[] hashedValues = hash.ComputeHash(Encoding.UTF8.GetBytes(password + salt));
+				StringBuilder builder = new StringBuilder();
+
+				foreach (byte point in hashedValues)
+				{
+					builder.Append(point.ToString("x2"));
+				}
+
+				return builder.ToString();
+			}
+		}
+
+		/// <summary>
 		/// Creates a user, if one with the same name does not exist.
 		/// </summary>
 		/// <param name="username">The user to create.</param>
@@ -183,19 +205,7 @@ namespace SMTPServer
 				throw new InvalidOperationException($"User {user.Username} already exists.");
 			}
 
-			// Hash password.
-			using (SHA256 hash = SHA256.Create())
-			{
-				byte[] hashedValues = hash.ComputeHash(Encoding.UTF8.GetBytes(user.Password + user.Salt));
-				StringBuilder builder = new StringBuilder();
-
-				foreach (byte point in hashedValues)
-				{
-					builder.Append(point.ToString("x2"));
-				}
-
-				user.Password = builder.ToString();
-			}
+			user.Password = HashPassword(user.Password, user.Salt);
 
 			List<User> allUsers = ListUsers().ToList();
 			allUsers.Add(user);

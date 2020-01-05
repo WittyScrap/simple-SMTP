@@ -177,7 +177,7 @@ namespace SMTPServer
 					_domain = helo.Domain;
 					State++;
 
-					return $"Welcome, {_domain}, I am {Domain}";
+					return $"Welcome, {_domain}; {Domain} here.";
 				}
 				else
 				{
