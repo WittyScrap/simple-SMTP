@@ -57,9 +57,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Authenticator.cs" />
     <Compile Include="DATACommand.cs" />
     <Compile Include="HELOCommand.cs" />
     <Compile Include="HELPCommand.cs" />
+    <Compile Include="LOGICommand.cs" />
     <Compile Include="Mail.cs" />
     <Compile Include="MAILCommand.cs" />
     <Compile Include="NOOPCommand.cs" />

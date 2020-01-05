@@ -69,6 +69,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetworkSecurity\NetworkSecurity.csproj">
+      <Project>{28101ba3-cc48-421d-9fcb-d39dfc0dc1f7}</Project>
+      <Name>NetworkSecurity</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Shell\Shell.csproj">
       <Project>{38d6994c-c74f-4602-84f7-c12632dc44c3}</Project>
       <Name>Shell</Name>

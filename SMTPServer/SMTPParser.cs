@@ -58,6 +58,10 @@ namespace SMTPServer
 					parsedCommand = new VRFYCommand(command);
 					break;
 
+				case "LOGI":
+					parsedCommand = new LOGICommand(command);
+					break;
+
 				case "QUIT":
 					parsedCommand = new QUITCommand(command);
 					break;
