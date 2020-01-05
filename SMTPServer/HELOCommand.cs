@@ -25,12 +25,12 @@ namespace SMTPServer
 		/// <summary>
 		/// Regular expression to match a given domain name.
 		/// </summary>
-		private Regex DomainMatch { get; } = new Regex(@"([a-z0-9]+\.)*[a-z0-9]+\.[a-z]+", RegexOptions.Compiled);
+		private Regex DomainMatch { get; } = new Regex(@"(\[(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\]|(#[0-9]{3,})|([a-z]|[A-Z])([a-z]|[A-Z]|[0-9]|-)+([a-z]|[A-Z]|[0-9]))(\.(\[(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\]|(#[0-9]{3,})|([a-z]|[A-Z])([a-z]|[A-Z]|[0-9]|-)+([a-z]|[A-Z]|[0-9])))*", RegexOptions.Compiled);
 
 		/// <summary>
 		/// The message to be displayed on successful parsing.
 		/// </summary>
-		protected override string SuccessMessage => Domain == null ? "Invalid domain provided." : $"Welcome, {Domain}!";
+		protected override string SuccessMessage => Domain == null ? "Invalid domain provided." : "";
 
 		/// <summary>
 		/// The response code upon successful parsing.

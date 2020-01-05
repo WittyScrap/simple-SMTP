@@ -49,7 +49,7 @@ namespace Shell
 
 			try
 			{
-				_enviromentVars = Variables.Load("../../Environment.vars");
+				_enviromentVars = Variables.Load("Environment.vars");
 			}
 			catch (Exception e)
 			{

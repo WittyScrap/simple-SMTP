@@ -2,123 +2,245 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Mail;
+using VariableManagement;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SMTPServer
 {
 	/// <summary>
 	/// Manages internal SMTP permanent data for mailboxes/audit logs.
 	/// </summary>
-	static class SMTPData
+	class SMTPData
 	{
 		/// <summary>
-		/// The name of the root folder.
+		/// The root of all SMTP data.
 		/// </summary>
-		const string ROOT = "SMTP";
+		public string DirectoryRoot { get; }
 
 		/// <summary>
-		/// Returns all users inside the main ROOT folder.
+		/// The name of the users database.
 		/// </summary>
-		/// <returns>All users inside the root folder.</returns>
-		public static IEnumerable<string> GetUsers()
-		{
-			if (!Directory.Exists(ROOT))
-			{
-				return Enumerable.Empty<string>();
-			}
+		public string UsersDatabase { get; }
 
-			return Directory.EnumerateDirectories(ROOT);
+		/// <summary>
+		/// The path to the users database.
+		/// </summary>
+		public string UsersPath => Path.Combine(DirectoryRoot, UsersDatabase);
+
+		/// <summary>
+		/// The direct path to all inboxes.
+		/// </summary>
+		public string InboxesFolder => Path.Combine(DirectoryRoot, "Inboxes");
+
+		/// <summary>
+		/// Initialises a connection to the users database.
+		/// </summary>
+		public SMTPData(string root, string databaseName)
+		{
+			DirectoryRoot = root;
+			UsersDatabase = databaseName;
+
+			PrepareConfiguration();
+
+			_usersData = Variables.Load(UsersPath);
 		}
 
 		/// <summary>
-		/// Checks that a username exists.
+		/// Creates any missing folders and files.
 		/// </summary>
-		/// <param name="username">The username to verify.</param>
-		/// <returns>True if the username's mailbox could be found, false otherwise.</returns>
-		public static bool UsernameExists(string username)
+		private void PrepareConfiguration()
 		{
-			username = ROOT + Path.DirectorySeparatorChar + username;
-
-			foreach (string user in GetUsers())
+			if (!Directory.Exists(DirectoryRoot))
 			{
-				if (user == username)
+				Directory.CreateDirectory(DirectoryRoot);
+			}
+
+			if (!File.Exists(UsersPath))
+			{
+				File.WriteAllText(UsersPath, "users\r\n{\r\n}\r\n");
+			}
+		}
+
+		/// <summary>
+		/// Creates an inbox folder if it does not exist and returns a direct path to it.
+		/// </summary>
+		private string GetInbox(string email)
+		{
+			if (!Directory.Exists(InboxesFolder))
+			{
+				Directory.CreateDirectory(InboxesFolder);
+			}
+
+			string fullPath = Path.Combine(InboxesFolder, email);
+
+			if (!Directory.Exists(fullPath))
+			{
+				Directory.CreateDirectory(fullPath);
+			}
+
+			return fullPath;
+		}
+
+		/// <summary>
+		/// Checks whether or not a username has been registered in the users data.
+		/// </summary>
+		public User Verify(string username)
+		{
+			if (_usersData.Root.GetObject("users")?.GetObject(username) != null)
+			{
+				VariablesObject user = _usersData.Root.GetObject("users").GetObject(username);
+
+				return new User((string)user.GetField("salt"))
 				{
-					return true;
+					Username = username,
+					Password = (string)user.GetField("password"),
+					Name = (string)user.GetField("name"),
+					Email = new MailAddress((string)user.GetField("email"))
+				};
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Verifies an email address.
+		/// </summary>
+		public User VerifyMail(string email)
+		{
+			foreach (User user in ListUsers())
+			{
+				if (user.Email.Address == email)
+				{
+					return new User()
+					{
+						Username = user.Username,
+						Name = user.Name,
+						Email = user.Email
+					};
 				}
 			}
 
-			return false;
+			return null;
 		}
 
 		/// <summary>
-		/// Returns the path to use to reach a given username.
+		/// Stores an email.
 		/// </summary>
-		/// <param name="username">The username to be reached.</param>
-		/// <returns>The full path to reach the username's inbox.</returns>
-		private static string GetUserPath(string username)
+		public void SaveMail(Mail mail)
 		{
-			return ROOT + Path.DirectorySeparatorChar + username;
-		}
+			string inbox = GetInbox(mail.Receiver);
+			string emailName = $"mail{mail.Sender}{mail.Receiver}data.mail";
 
-		/// <summary>
-		/// Returns all mail for a given username.
-		/// If the user does not exist, no mail will be returned.
-		/// </summary>
-		/// <param name="username">The username to check any mail for.</param>
-		/// <returns>All mail in the user's inbox.</returns>
-		public static IEnumerable<Mail> GetInbox(string username)
-		{
-			if (!UsernameExists(username))
+			string emailPath = Path.Combine(inbox, emailName);
+			string submitPath = emailPath;
+
+			int offset = 0;
+
+			while (File.Exists(submitPath))
 			{
-				yield break;
+				submitPath = emailPath + "#" + ++offset;
 			}
 
-			string path = GetUserPath(username);
+			File.WriteAllText(submitPath, mail.Serialise());
+		}
 
-			foreach (string mail in Directory.EnumerateFiles(path))
+		/// <summary>
+		/// Stores any changes made to the users list back into the users file.
+		/// </summary>
+		/// <param name="users">The updated users list.</param>
+		private void SaveChanges(ICollection<User> users)
+		{
+			string data = "users\n{\n";
+
+			foreach (User user in users)
 			{
-				string mailFile = File.ReadAllText(mail);
-				Mail mailObject = Mail.Deserialize(mailFile);
+				data += $"\t{user.Username}\n\t{{\n";
+				data += $"\t\tpassword: \"{user.Password}\";\n";
+				data += $"\t\tsalt: \"{user.Salt}\";\n";
+				data += $"\t\tname: \"{user.Name}\";\n";
+				data += $"\t\temail: \"{user.Email.Address}\";\n";
+				data += "\t}\n";
+			}
 
-				if (mailObject != null)
+			data += "}";
+
+			File.WriteAllText(UsersPath, data);
+			_usersData = Variables.Parse(data);
+		}
+
+		/// <summary>
+		/// Creates a user, if one with the same name does not exist.
+		/// </summary>
+		/// <param name="username">The user to create.</param>
+		public void CreateUser(User user)
+		{
+			if (Verify(user.Username) != null)
+			{
+				throw new InvalidOperationException($"User {user.Username} already exists.");
+			}
+
+			// Hash password.
+			using (SHA256 hash = SHA256.Create())
+			{
+				byte[] hashedValues = hash.ComputeHash(Encoding.UTF8.GetBytes(user.Password + user.Salt));
+				StringBuilder builder = new StringBuilder();
+
+				foreach (byte point in hashedValues)
 				{
-					yield return mailObject;
+					builder.Append(point.ToString("x2"));
 				}
+
+				user.Password = builder.ToString();
 			}
+
+			List<User> allUsers = ListUsers().ToList();
+			allUsers.Add(user);
+
+			SaveChanges(allUsers);
 		}
 
 		/// <summary>
-		/// Saves a mail into its appropriate inbox.
+		/// Deletes a user, if it exists.
 		/// </summary>
-		/// <param name="mail">The mail to be saved.</param>
-		public static void SaveMail(Mail mail)
+		/// <param name="username">The user to be deleted.</param>
+		public void DeleteUser(string username)
 		{
-			string mailData = mail.Serialise();
-			string inbox = mail.Receiver;
-
-			if (!UsernameExists(inbox))
+			if (Verify(username) == null)
 			{
-				return;
+				throw new InvalidOperationException($"User {username} does not exist, cannot delete.");
 			}
 
-			DateTime foo = DateTime.UtcNow;
-			long unixTime = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+			List<User> allUsers = ListUsers().ToList();
+			allUsers.RemoveAll(userObject => userObject.Username == username);
 
-			string path = GetUserPath(inbox) + Path.DirectorySeparatorChar;
-			string baseName = $"mail#{mail.Sender}#{mail.Receiver}#{unixTime}";
-			string fileName = baseName;
-
-			int userPadding = 0;
-
-			while (File.Exists(path + fileName))
-			{
-				fileName = baseName + $"#{++userPadding}";
-			}
-
-			fileName = path + fileName + "#data.mail";
-
-			File.WriteAllText(fileName, mailData);
+			SaveChanges(allUsers);
 		}
+
+		/// <summary>
+		/// Lists all available users.
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<User> ListUsers()
+		{
+			VariablesObject users = _usersData.Root.GetObject("users");
+
+			foreach (var examinedUser in users.GetAllObjects())
+			{
+				yield return new User((string)examinedUser.Value.GetField("salt"))
+				{
+					Username = examinedUser.Key,
+					Name = (string)examinedUser.Value.GetField("name"),
+					Email = new MailAddress((string)examinedUser.Value.GetField("email")),
+					Password = (string)examinedUser.Value.GetField("password")
+				};
+			}
+		}
+
+		// Users data
+		private Variables _usersData;
 	}
 }

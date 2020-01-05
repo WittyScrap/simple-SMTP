@@ -1,10 +1,12 @@
 ﻿using Server;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using VariableManagement;
 
 namespace SMTPServer
 {
@@ -17,11 +19,41 @@ namespace SMTPServer
 		private Dictionary<Socket, SMTPSession> _activeSessions;
 
 		/// <summary>
+		/// The root for all permanent SMTP data.
+		/// </summary>
+		public SMTPData Source { get; private set; }
+
+		/// <summary>
 		/// Creates a new SMTP server.
 		/// </summary>
 		public SMTPServer()
 		{
 			_activeSessions = new Dictionary<Socket, SMTPSession>();
+			Configure("SMTP.vars");
+		}
+
+		/// <summary>
+		/// Configures this server's permanent data management.
+		/// </summary>
+		/// <param name="configurationFile">The configuration file.</param>
+		public void Configure(string configurationFile)
+		{
+			Variables config;
+
+			try
+			{
+				config = Variables.Load(configurationFile);
+			}
+			catch (Exception)
+			{
+				return;
+			}
+
+			Source = new SMTPData
+			(
+				config.Get<string>("SMTP.rootFolder"),
+				config.Get<string>("SMTP.databaseName")
+			);
 		}
 
 		/// <summary>
@@ -56,7 +88,13 @@ namespace SMTPServer
 		/// <returns>The SMTP welcome message.</returns>
 		public string OnConnection(Socket connection)
 		{
-			SMTPSession acceptedSession = new SMTPSession();
+			if (Source == null)
+			{
+				Disconnected.Add(connection);
+				return SMTPCodes.Compose(SMTPCodes.ServerError.SVER, "Invalid server configuration, closing connection...");
+			}
+
+			SMTPSession acceptedSession = new SMTPSession(Source);
 			_activeSessions[connection] = acceptedSession;
 
 			return acceptedSession.OnWelcome();

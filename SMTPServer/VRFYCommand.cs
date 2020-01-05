@@ -19,22 +19,22 @@ namespace SMTPServer
 		/// <summary>
 		/// The message to display on successful parsing.
 		/// </summary>
-		protected override string SuccessMessage => IsComplete ? SMTPData.UsernameExists(Username) ? $"OK, <{Username}> is verified." : $"OK, <{Username}> is not local." : "Invalid syntax.";
+		protected override string SuccessMessage => IsComplete ? "" : "Invalid syntax.";
 
 		/// <summary>
 		/// The code to be returned upon successful parsing.
 		/// </summary>
-		protected override string SuccessCode => IsComplete ? base.SuccessCode : SMTPCodes.ClientError.PSTX;
+		protected override string SuccessCode => IsComplete ? "" : SMTPCodes.ClientError.PSTX;
 
 		/// <summary>
 		/// Whether or not the command includes the username argument.
 		/// </summary>
-		private bool IsComplete => Username != null;
+		public bool IsComplete => Username != null;
 
 		/// <summary>
 		/// The stored username.
 		/// </summary>
-		private string Username { get; } = null;
+		public string Username { get; } = null;
 
 		/// <summary>
 		/// Manages a new VRFY command.

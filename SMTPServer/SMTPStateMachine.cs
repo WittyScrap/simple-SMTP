@@ -12,6 +12,11 @@ namespace SMTPServer
 	class SMTPStateMachine : IDisposable
 	{
 		/// <summary>
+		/// The server's domain.
+		/// </summary>
+		public const string Domain = "fakegmail.co.uk";
+
+		/// <summary>
 		/// The current state of the SMTP session.
 		/// </summary>
 		public enum SessionState
@@ -125,12 +130,36 @@ namespace SMTPServer
 					return command.Response;
 
 				case "VRFY":
-					// VRFY contains all necessary work within the command class.
-					return command.Response;
+					// Handle VRFY command appropriately.
+					return ManageVerify((VRFYCommand)command);
 
 				default:
 					// Nothing stateless, proceed as normal.
 					return null;
+			}
+		}
+
+		/// <summary>
+		/// Handles which message to return from a VRFY command.
+		/// </summary>
+		private string ManageVerify(VRFYCommand command)
+		{
+			if (!command.IsComplete || !command.IsFormatted)
+			{
+				return command.Response;
+			}
+			else
+			{
+				User checkingUser = _data.Verify(command.Username);
+
+				if (checkingUser != null)
+				{
+					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, {checkingUser.Name} <{checkingUser.Email.Address}> verified.");
+				}
+				else
+				{
+					return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"{command.Username} could not be verified, user not local.");
+				}
 			}
 		}
 
@@ -147,9 +176,13 @@ namespace SMTPServer
 				{
 					_domain = helo.Domain;
 					State++;
-				}
 
-				return helo.Response;
+					return $"Welcome, {_domain}, I am {Domain}";
+				}
+				else
+				{
+					return helo.Response;
+				}
 			}
 			else
 			{
@@ -168,7 +201,7 @@ namespace SMTPServer
 
 				if (mail.IsFormatted)
 				{
-					if (!SMTPData.UsernameExists(mail.Address))
+					if (_data.VerifyMail(mail.Address) == null)
 					{
 						return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
 					}
@@ -202,7 +235,7 @@ namespace SMTPServer
 
 					if (rcpt.IsFormatted)
 					{
-						if (!SMTPData.UsernameExists(rcpt.Address))
+						if (_data.VerifyMail(rcpt.Address) == null)
 						{
 							return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
 						}
@@ -267,7 +300,7 @@ namespace SMTPServer
 
 			foreach (string receiver in _recipients)
 			{
-				SMTPData.SaveMail(new Mail(_sender, receiver, _mailData));
+				_data.SaveMail(new Mail(_sender, receiver, _mailData));
 			}
 		}
 
@@ -307,9 +340,10 @@ namespace SMTPServer
 		/// <summary>
 		/// Creates a new SMTP state machine.
 		/// </summary>
-		public SMTPStateMachine()
+		public SMTPStateMachine(SMTPData data)
 		{
 			_recipients = new HashSet<string>();
+			_data = data;
 		}
 
 		/// <summary>
@@ -336,6 +370,7 @@ namespace SMTPServer
 		// State-specific data.
 		private string _sender;
 		private HashSet<string> _recipients;
+		private SMTPData _data;
 
 		private string _mailData;
 	}

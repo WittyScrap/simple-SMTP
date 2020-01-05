@@ -53,9 +53,9 @@ namespace SMTPServer
 		/// <summary>
 		/// Initialises a new SMTP session.
 		/// </summary>
-		public SMTPSession()
+		public SMTPSession(SMTPData data)
 		{
-			_stateMachine = new SMTPStateMachine();
+			_stateMachine = new SMTPStateMachine(data);
 		}
 
 		// The SMTP state machine.

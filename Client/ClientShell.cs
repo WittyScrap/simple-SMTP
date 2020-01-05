@@ -81,8 +81,16 @@ namespace Client
 			{
 				string remote = Remote;
 
-				_connection.Shutdown(SocketShutdown.Both);
-				_connection.Close();
+				try
+				{
+					_connection.Shutdown(SocketShutdown.Both);
+					_connection.Close();
+				}
+				catch (SocketException)
+				{
+					// Nothing to do...
+				}
+
 				_connection = null;
 
 				Print(entityMachine, "Disconnected from " + remote);

@@ -67,8 +67,5 @@
       <Name>Vars</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Environment.vars" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -73,9 +73,9 @@ namespace SMTPServer
 		{
 			string data = "mail {\r\n";
 
-			data += $"\tsender: \"{Sender}\"\r\n";
-			data += $"\treceiver: \"{Receiver}\"\r\n";
-			data += $"\tdata: \r\n\"{Data}\"\r\n";
+			data += $"\tsender: \"{Sender}\";\r\n";
+			data += $"\treceiver: \"{Receiver}\";\r\n";
+			data += $"\tdata: \r\n\"{Data}\";\r\n";
 
 			data += "}";
 

@@ -15,8 +15,13 @@ namespace Server
 	/// Represents a shell that can listen to any incoming connection and can
 	/// function as a generic server for any kind of application.
 	/// </summary>
-	class ServerShell : AsyncShell<ServerCommandSet>
+	public class ServerShell : AsyncShell<ServerCommandSet>
 	{
+		/// <summary>
+		/// The program that is currently loaded on this shell.
+		/// </summary>
+		public IServerProgram Program => _serverProgram;
+
 		/// <summary>
 		/// Loads a server program into this server shell.
 		/// </summary>
@@ -160,6 +165,7 @@ namespace Server
 			}
 
 			_clients[client] = state;
+			ClearDisconnected();
 		}
 
 		/// <summary>
@@ -209,7 +215,14 @@ namespace Server
 			}
 
 			ClearBuffer(client.ReadBuffer);
+			ClearDisconnected();
+		}
 
+		/// <summary>
+		/// Removes and closes all sockets that have requested a disconnection.
+		/// </summary>
+		private void ClearDisconnected()
+		{
 			foreach (Socket disconnected in _serverProgram.Disconnected)
 			{
 				RemoveConnection(disconnected);

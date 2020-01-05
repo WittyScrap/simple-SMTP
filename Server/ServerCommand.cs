@@ -42,25 +42,41 @@ namespace Server
 						Assembly packAssembly = Assembly.LoadFile(packFile);
 						string serverName = null;
 
+						int commandsCount = 0;
+
 						foreach (Type packType in packAssembly.GetTypes())
 						{
-							if (typeof(IServerProgram).IsAssignableFrom(packType))
+							if (serverName == null && typeof(IServerProgram).IsAssignableFrom(packType))
 							{
-								IServerProgram serverProgram = (IServerProgram)Activator.CreateInstance(packType);
-								serverShell.LoadServer(serverProgram);
+								try
+								{
+									IServerProgram serverProgram = (IServerProgram)Activator.CreateInstance(packType);
+									serverShell.LoadServer(serverProgram);
 
-								serverName = packType.Name;
-								break;
+									serverName = packType.Name;
+								}
+								catch (Exception e)
+								{
+									return Format.Error(serverShell, Name, "Could not load server program due to an error: " + e.Message);
+								}
+							}
+
+							if (typeof(ICommand).IsAssignableFrom(packType))
+							{
+								ICommand command = (ICommand)Activator.CreateInstance(packType);
+								serverShell.Commands.Expand(command.Name, command);
+
+								commandsCount++;
 							}
 						}
 
 						if (serverName == null)
 						{
-							return Format.Error(serverShell, Name, "No IServerProgram class found within given DLL.");
+							return Format.Error(serverShell, Name, $"No IServerProgram class found within given DLL{(commandsCount > 0 ? $", but {commandsCount} commands loaded" : "")}.");
 						}
 						else
 						{
-							serverShell.Print(Name, $"Succesfully loaded server: {serverName}.");
+							serverShell.Print(Name, $"Succesfully loaded server: {serverName}{(commandsCount > 0 ? $", and {commandsCount} commands loaded" : "")}.");
 						}
 
 						return true;

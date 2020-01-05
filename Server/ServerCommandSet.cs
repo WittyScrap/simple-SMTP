@@ -11,7 +11,7 @@ namespace Server
 	/// <summary>
 	/// The command set to be used by the server.
 	/// </summary>
-	class ServerCommandSet : IExpandableCommandSet
+	public class ServerCommandSet : IExpandableCommandSet
 	{
 		/// <summary>
 		/// Saves all related commands.
