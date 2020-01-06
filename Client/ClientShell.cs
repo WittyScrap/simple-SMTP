@@ -86,10 +86,18 @@ namespace Client
 
 			if (UsingEncryption)
 			{
-				_key.Reset();
-				Send(_key.Initiate(), true);
-				OnMessage += OnKeyExchangeCheck;
+				PerformKeyExchange();
 			}
+		}
+
+		/// <summary>
+		/// Prepares a Diffie-hellman key exchange.
+		/// </summary>
+		private void PerformKeyExchange()
+		{
+			_key.Reset();
+			Send(_key.Initiate(), true);
+			OnMessage += OnKeyExchangeCheck;
 		}
 
 		/// <summary>
