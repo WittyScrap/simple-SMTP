@@ -7,9 +7,16 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
 using NetworkSecurity;
+using System.Numerics;
+using VariableManagement;
 
 namespace Client
 {
+	/// <summary>
+	/// Represents a delegate that can be used for message transferrals.
+	/// </summary>
+	delegate void MessageTransaction(string contents);
+
 	/// <summary>
 	/// An asynchronous shell system to better handle
 	/// over-the-network connections. More specialised
@@ -17,6 +24,11 @@ namespace Client
 	/// </summary>
 	public class ClientShell : AsyncShell<ClientCommandSet>
 	{
+		/// <summary>
+		/// Event to be invoked when a message has been received.
+		/// </summary>
+		internal event MessageTransaction OnMessage;
+
 		/// <summary>
 		/// Connects this shell to the specified host and port number.
 		/// </summary>
@@ -71,6 +83,42 @@ namespace Client
 
 			_senderThread.Start();
 			_listenThread.Start();
+
+			if (UsingEncryption)
+			{
+				_key.Reset();
+				Send(_key.Initiate(), true);
+				OnMessage += OnKeyExchangeCheck;
+			}
+		}
+
+		/// <summary>
+		/// Updates the key exchange sequence.
+		/// </summary>
+		/// <param name="contents"></param>
+		private void OnKeyExchangeCheck(string contents)
+		{
+			string response = null;
+
+			if (!_key.HasFailed && !_key.IsReady)
+			{
+				response = _key.Evaluate(contents);
+			}
+
+			if (response != null)
+			{
+				Send(response, true);
+			}
+			else
+			{
+				if (_key.HasFailed)
+				{
+					EnqueueCommand(() => Print(entityMachine, "Key transaction failed, closing..."));
+					Disconnect();
+				}
+
+				OnMessage -= OnKeyExchangeCheck;
+			}
 		}
 
 		/// <summary>
@@ -163,9 +211,15 @@ namespace Client
                 any = true;
 			}
 
-			if (any && UsingEncryption)
+			if (_key.ReadyToApply)
 			{
-				message = DecryptMessage(message, EncryptionKey);
+				_key.Apply();
+				OnMessage -= OnKeyExchangeCheck;
+			}
+
+			if (any && _key.IsReady && UsingEncryption)
+			{
+				message = DecryptMessage(message, _key.EncryptionKey);
 			}
 
 			return any;
@@ -201,9 +255,9 @@ namespace Client
 				message += Decode(receivedBytes);
 			}
 
-			if (UsingEncryption)
+			if (_key.IsReady && UsingEncryption)
 			{
-				message = DecryptMessage(message, EncryptionKey);
+				message = DecryptMessage(message, _key.EncryptionKey);
 			}
 
 			return message;
@@ -260,9 +314,9 @@ namespace Client
 				message += "\r\n";
 			}
 
-			if (UsingEncryption)
+			if (_key.IsReady && UsingEncryption)
 			{
-				message = EncryptMessage(message, EncryptionKey);
+				message = EncryptMessage(message, _key.EncryptionKey);
 			}
 
 			_messageQueue.Enqueue(message);
@@ -294,7 +348,12 @@ namespace Client
 		{
 			if (TryReceive(out string receivedData))
 			{
-				Print(entityHost, receivedData);
+				OnMessage?.Invoke(receivedData);
+
+				if (!UsingEncryption || _key.IsReady)
+				{
+					Print(entityHost, receivedData);
+				}
 			}
 		}
 
@@ -388,11 +447,6 @@ namespace Client
 		public bool Listen { get; set; } = true;
 
 		/// <summary>
-		/// The key to be used during encryption and decryption.
-		/// </summary>
-		private string EncryptionKey { get; } = "gay";
-
-		/// <summary>
 		/// Whether or not this shell is using encryption to communicate with servers.
 		/// </summary>
 		public bool UsingEncryption => Variables.Get<bool>("network.encrypted");
@@ -405,7 +459,8 @@ namespace Client
 		private Thread _senderThread;
 		private Thread _listenThread;
 		private ConcurrentQueue<string> _messageQueue;
-		private IEncryptor _encryptor = new CaesarCypher();
+		private readonly IEncryptor _encryptor = new CaesarCypher();
+		private readonly ExchangeInitiator _key = new ExchangeInitiator();
 
 		// -- Network data --
 

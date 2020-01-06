@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -92,16 +93,10 @@ namespace VariableManagement
 					{
 						CheckForInvalidTokens(token, i, ";:{}");
 
-						if (TryParse(token, out object parsedToken))
-						{
-							scope.Peek().AddField(previousName, parsedToken);
-							_state++;
-						}
-						else
-						{
-							throw new Exception(@"\cf1\b Parsing error:\b0\cf2\i  unsupported type for value " + previousName
-											  + @", the only supported types are bool, float, string, and int.\i0\cf3");
-						}
+						Parse(token, out object parsedToken);
+						scope.Peek().AddField(previousName, parsedToken);
+						_state++;
+
 						break;
 					}
 
@@ -181,10 +176,8 @@ namespace VariableManagement
 		/// <param name="token">The raw string token.</param>
 		/// <param name="parsed">The parsed object type.</param>
 		/// <returns>True of the token can be parsed into any of the known object types, false otherwise.</returns>
-		public static bool TryParse(string token, out object parsed)
+		public static void Parse(string token, out object parsed)
 		{
-			parsed = null;
-
 			if (token == "true" || token == "false")
 			{
 				parsed = token == "true" ? true : false;
@@ -192,6 +185,14 @@ namespace VariableManagement
 			else if (int.TryParse(token, out int intValue))
 			{
 				parsed = intValue;
+			}
+			else if (long.TryParse(token, out long longValue))
+			{
+				parsed = longValue;
+			}
+			else if (BigInteger.TryParse(token, out BigInteger bigValue))
+			{
+				parsed = bigValue;
 			}
             else if (float.TryParse(token, out float floatValue))
 			{
@@ -201,9 +202,6 @@ namespace VariableManagement
 			{
 				parsed = token;
 			}
-
-
-			return parsed != null;
 		}
 	}
 }

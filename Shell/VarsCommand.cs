@@ -55,10 +55,7 @@ namespace Shell
 					return Format.Error(sourceShell, Name, "Incomplete vars command: set flag was found, but no value was provided.");
 				}
 
-				if (!VariablesParser.TryParse(variableValue, out object parsedValue))
-				{
-					return Format.Error(sourceShell, Name, "Invalid value type provided.");
-				}
+				VariablesParser.Parse(variableValue, out object parsedValue);
 
 				try
 				{

@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using NetworkSecurity;
+using System.Net.Sockets;
 
 namespace Server
 {
@@ -18,6 +19,11 @@ namespace Server
 		public byte[] ReadBuffer { get; }
 
 		/// <summary>
+		/// The key exchange manager.
+		/// </summary>
+		public ExchangeListener Key { get; }
+
+		/// <summary>
 		/// Creats a new client state.
 		/// </summary>
 		/// <param name="bufferSize">The agreed buffer size.</param>
@@ -25,6 +31,7 @@ namespace Server
 		{
 			Connection = connection;
 			ReadBuffer = new byte[bufferSize];
+			Key = new ExchangeListener();
 		}
 	}
 }

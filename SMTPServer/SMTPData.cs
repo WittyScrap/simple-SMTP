@@ -133,7 +133,7 @@ namespace SMTPServer
 		public void SaveMail(Mail mail)
 		{
 			string inbox = GetInbox(mail.Receiver);
-			string emailName = $"mail{mail.Sender}{mail.Receiver}data.mail";
+			string emailName = $"mail{mail.Sender}{mail.Receiver}";
 
 			string emailPath = Path.Combine(inbox, emailName);
 			string submitPath = emailPath;
@@ -144,6 +144,8 @@ namespace SMTPServer
 			{
 				submitPath = emailPath + "#" + ++offset;
 			}
+
+			submitPath += "_data.mail";
 
 			File.WriteAllText(submitPath, mail.Serialise());
 		}

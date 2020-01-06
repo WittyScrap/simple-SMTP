@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -154,16 +155,24 @@ namespace Server
 
 			EnqueueCommand(() => Print(entityMachine, $"Accepting connection from: {GetRemote(client)}."));
 
-			string hostName = GetRemote(client);
-			string init = _serverProgram.OnConnection(client);
+			_clients[client] = state;
+		}
+
+		/// <summary>
+		/// Handles the optional welcome message.
+		/// </summary>
+		/// <param name="connection">The connection to send the message to.</param>
+		private void WelcomeMessage(Socket connection)
+		{
+			string hostName = GetRemote(connection);
+			string init = _serverProgram.OnConnection(connection);
 
 			if (init != null)
 			{
-				Send(client, init);
+				Send(connection, init);
 				EnqueueCommand(() => Print($"[{entityMachine}->{hostName}]", init));
 			}
 
-			_clients[client] = state;
 			ClearDisconnected();
 		}
 
@@ -205,21 +214,71 @@ namespace Server
 
 			string data = Decode(client.ReadBuffer);
 
-			if (Variables.Get<bool>("network.encrypted"))
+			if (!UsingEncryption || _clients[connection].Key.IsReady)
 			{
-				data = DecryptMessage(data, EncryptionKey);
+				EvaluateResponse(connection, data);
 			}
-
-			EnqueueCommand(() => Print(hostName, data));
-			string response = _serverProgram.HandleInput(connection, data);
-
-			if (response != null)
+			else
 			{
-				SendMultiline(connection, response);
+				OnKeyExchangeCheck(connection, data);
 			}
 
 			ClearBuffer(client.ReadBuffer);
 			ClearDisconnected();
+		}
+
+		/// <summary>
+		/// Passes the received data to the server program to evaluate
+		/// a response and sends it back to the client.
+		/// </summary>
+		private void EvaluateResponse(Socket connection, string data)
+		{
+			if (Variables.Get<bool>("network.encrypted"))
+			{
+				data = DecryptMessage(data, _clients[connection].Key.EncryptionKey);
+			}
+
+			if (data != null)
+			{
+				EnqueueCommand(() => Print(GetRemote(connection), data));
+				string response = _serverProgram.HandleInput(connection, data);
+
+				if (response != null)
+				{
+					SendMultiline(connection, response);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Updates the key exchange sequence.
+		/// </summary>
+		private void OnKeyExchangeCheck(Socket connection, string data)
+		{
+			ExchangeListener key = _clients[connection].Key;
+			string response = null;
+
+			if (!key.HasFailed && !key.IsReady)
+			{
+				response = key.Evaluate(data);
+			}
+
+			if (response != null)
+			{
+				Send(connection, response);
+			}
+			else
+			{
+				if (key.HasFailed)
+				{
+					EnqueueCommand(() => Print(entityMachine, "Key transaction failed, closing..."));
+					RemoveConnection(connection);
+				}
+				else if (key.IsReady)
+				{
+					WelcomeMessage(connection);
+				}
+			}
 		}
 
 		/// <summary>
@@ -266,9 +325,9 @@ namespace Server
 		/// <param name="message">The message to transmit</param>
 		public void Send(Socket connection, string message)
 		{
-			if (UsingEncryption)
+			if (_clients[connection].Key.IsReady && UsingEncryption)
 			{
-				message = EncryptMessage(message, EncryptionKey);
+				message = EncryptMessage(message, _clients[connection].Key.EncryptionKey);
 			}
 
 			byte[] sendBytes = Encode(message);
@@ -422,11 +481,6 @@ namespace Server
 		{
 			; // NOP
 		}
-
-		/// <summary>
-		/// The key to be used during encryption and decryption.
-		/// </summary>
-		private string EncryptionKey { get; } = "gay";
 
 		/// <summary>
 		/// Whether or not this shell is using encryption to communicate with servers.
