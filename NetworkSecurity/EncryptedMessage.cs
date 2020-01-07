@@ -129,7 +129,7 @@ namespace NetworkSecurity
         public bool CompareHash()
         {
             string combined = $"{Sender};{Receiver};{Data}";
-            return HashText(combined) == Hash;
+            return EncryptionUtilities.CalculateHash(combined) == Hash;
         }
 
         /// <summary>
@@ -139,26 +139,7 @@ namespace NetworkSecurity
         public void RecalculateHash()
         {
             string combined = $"{Sender};{Receiver};{Data}";
-            Hash = HashText(combined);
-        }
-
-        /// <summary>
-        /// Calculates the hash for any input text.
-        /// </summary>
-        public static string HashText(string text)
-        {
-            using (SHA256 hash = SHA256.Create())
-            {
-                byte[] hashedValues = hash.ComputeHash(Encoding.UTF8.GetBytes(text));
-                StringBuilder builder = new StringBuilder();
-
-                foreach (byte point in hashedValues)
-                {
-                    builder.Append(point.ToString("x2"));
-                }
-
-                return builder.ToString();
-            }
+            Hash = EncryptionUtilities.CalculateHash(combined);
         }
     }
 }

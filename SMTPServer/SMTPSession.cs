@@ -39,6 +39,11 @@ namespace SMTPServer
 					_authenticator.Logout();
 				}
 
+				if (_stateMachine.Username == null && _authenticator.IsAuthenticated)
+				{
+					_stateMachine.Username = _authenticator.Username;
+				}
+
 				return _stateMachine.Process(messageData);
 			}
 		}

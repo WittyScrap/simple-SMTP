@@ -52,7 +52,8 @@ namespace SMTPServer
 			Source = new SMTPData
 			(
 				config.Get<string>("SMTP.rootFolder"),
-				config.Get<string>("SMTP.databaseName")
+				config.Get<string>("SMTP.databaseName"),
+				config.Get<string>("SMTP.logsName")
 			);
 		}
 

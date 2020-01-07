@@ -133,7 +133,18 @@ namespace Server
 						}
 						else
 						{
-							Thread handler = new Thread(() => HandleConnection(socket));
+							Thread handler = new Thread(() =>
+							{
+								try
+								{
+									HandleConnection(socket);
+								}
+								catch (Exception readError)
+								{
+									Format.Error(this, entityMachine, readError.Message);
+								}
+							});
+
 							_handlers.Add(handler);
 							handler.Start();
 						}

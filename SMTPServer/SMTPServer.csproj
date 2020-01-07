@@ -84,6 +84,10 @@
     <Compile Include="VRFYCommand.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetworkSecurity\NetworkSecurity.csproj">
+      <Project>{28101ba3-cc48-421d-9fcb-d39dfc0dc1f7}</Project>
+      <Name>NetworkSecurity</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Server\Server.csproj">
       <Project>{036d960a-8b41-47c6-bbc4-cfa611692457}</Project>
       <Name>Server</Name>

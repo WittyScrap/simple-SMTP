@@ -64,7 +64,14 @@ namespace Client
 			{
 				while (IsConnected)
 				{
-					SendAllMessages();
+					try
+					{
+						SendAllMessages();
+					}
+					catch (Exception writeError)
+					{
+						Format.Error(this, entityMachine, writeError.Message);
+					}
 				}
 			});
 
@@ -74,7 +81,14 @@ namespace Client
 				{
 					if (Listen)
 					{
-						DisplayResponse();
+						try
+						{
+							DisplayResponse();
+						}
+						catch (Exception readError)
+						{
+							Format.Error(this, entityMachine, readError.Message);
+						}
 					}
 				}
 			});

@@ -36,11 +36,19 @@ namespace SMTPServer
 		public MailAddress Email { get; set; }
 
 		/// <summary>
+		/// Generates a salt string for salting passwords or other text.
+		/// </summary>
+		public static string GenerateSalt()
+		{
+			return Guid.NewGuid().ToString();
+		}
+
+		/// <summary>
 		/// Generates a new user with a randomly generated salt for its password.
 		/// </summary>
 		public User()
 		{
-			Salt = Guid.NewGuid().ToString();
+			Salt = GenerateSalt();
 		}
 
 		/// <summary>

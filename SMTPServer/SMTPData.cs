@@ -6,6 +6,8 @@ using System.Net.Mail;
 using VariableManagement;
 using System.Security.Cryptography;
 using System.Text;
+using NetworkSecurity;
+using Shell;
 
 namespace SMTPServer
 {
@@ -35,12 +37,18 @@ namespace SMTPServer
 		public string InboxesFolder => Path.Combine(DirectoryRoot, "Inboxes");
 
 		/// <summary>
+		/// Contains an audit log of all actions from all clients.
+		/// </summary>
+		public string AuditLog { get; private set; }
+
+		/// <summary>
 		/// Initialises a connection to the users database.
 		/// </summary>
-		public SMTPData(string root, string databaseName)
+		public SMTPData(string root, string databaseName, string auditLog)
 		{
 			DirectoryRoot = root;
 			UsersDatabase = databaseName;
+			AuditLog = auditLog;
 
 			PrepareConfiguration();
 
@@ -133,21 +141,10 @@ namespace SMTPServer
 		public void SaveMail(Mail mail)
 		{
 			string inbox = GetInbox(mail.Receiver);
-			string emailName = $"mail{mail.Sender}{mail.Receiver}";
-
+			string emailName = EncryptionUtilities.CalculateHash($"{mail.Sender}{mail.Receiver}{User.GenerateSalt()}{DateTime.Now.Ticks.ToString()}.mail");
 			string emailPath = Path.Combine(inbox, emailName);
-			string submitPath = emailPath;
 
-			int offset = 0;
-
-			while (File.Exists(submitPath))
-			{
-				submitPath = emailPath + "#" + ++offset;
-			}
-
-			submitPath += "_data.mail";
-
-			File.WriteAllText(submitPath, mail.Serialise());
+			File.WriteAllText(emailPath, mail.Serialise());
 		}
 
 		/// <summary>
@@ -175,28 +172,6 @@ namespace SMTPServer
 		}
 
 		/// <summary>
-		/// Hashes a password using SHA256.
-		/// </summary>
-		/// <param name="password">The password to hash.</param>
-		/// <param name="salt">The salt to add prior to salting.</param>
-		/// <returns></returns>
-		public static string HashPassword(string password, string salt)
-		{
-			using (SHA256 hash = SHA256.Create())
-			{
-				byte[] hashedValues = hash.ComputeHash(Encoding.UTF8.GetBytes(password + salt));
-				StringBuilder builder = new StringBuilder();
-
-				foreach (byte point in hashedValues)
-				{
-					builder.Append(point.ToString("x2"));
-				}
-
-				return builder.ToString();
-			}
-		}
-
-		/// <summary>
 		/// Creates a user, if one with the same name does not exist.
 		/// </summary>
 		/// <param name="username">The user to create.</param>
@@ -207,7 +182,7 @@ namespace SMTPServer
 				throw new InvalidOperationException($"User {user.Username} already exists.");
 			}
 
-			user.Password = HashPassword(user.Password, user.Salt);
+			user.Password = EncryptionUtilities.HashPassword(user.Password, user.Salt);
 
 			List<User> allUsers = ListUsers().ToList();
 			allUsers.Add(user);
@@ -250,6 +225,19 @@ namespace SMTPServer
 					Password = (string)examinedUser.Value.GetField("password")
 				};
 			}
+		}
+
+		/// <summary>
+		/// Logs an action within the <see cref="AuditLog"/> file.
+		/// </summary>
+		public void LogAction(string user, string action)
+		{
+			string header = $"[LOGGER::{DateTime.Now.ToString()}";
+			string body = $"{user} : {action}";
+
+			string hash = EncryptionUtilities.CalculateHash(body);
+
+			File.AppendAllText(AuditLog, $"{header}?:{hash}] - {body}\r\n");
 		}
 
 		// Users data

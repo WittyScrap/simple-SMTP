@@ -17,6 +17,16 @@ namespace SMTPServer
 		public const string Domain = "fakegmail.co.uk";
 
 		/// <summary>
+		/// The current session's username.
+		/// </summary>
+		public string Username { get; set; }
+
+		/// <summary>
+		/// The currently active user.
+		/// </summary>
+		public string ActiveUser => Username ?? _domain ?? "Anonymous";
+
+		/// <summary>
 		/// The current state of the SMTP session.
 		/// </summary>
 		public enum SessionState
@@ -119,7 +129,7 @@ namespace SMTPServer
 					return command.Response;
 
 				case "HELP":
-					// Help command.
+					_data.LogAction(ActiveUser, "Requested a HELP command.");
 					return command.Response;
 
 				case "QUIT":
@@ -150,6 +160,7 @@ namespace SMTPServer
 			}
 			else
 			{
+				_data.LogAction(ActiveUser, $"Tried verifying account {command.Username}.");
 				User checkingUser = _data.Verify(command.Username);
 
 				if (checkingUser != null)
@@ -160,6 +171,7 @@ namespace SMTPServer
 				{
 					return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"{command.Username} could not be verified, user not local.");
 				}
+
 			}
 		}
 
@@ -175,9 +187,10 @@ namespace SMTPServer
 				if (helo.IsFormatted && helo.Domain != null)
 				{
 					_domain = helo.Domain;
+					_data.LogAction(ActiveUser, "Identified itself through a HELO command and started a session.");
 					State++;
 
-					return $"Welcome, {_domain}; {Domain} here.";
+					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"Welcome to {Domain}, {_domain}.");
 				}
 				else
 				{
@@ -302,6 +315,8 @@ namespace SMTPServer
 			{
 				_data.SaveMail(new Mail(_sender, receiver, _mailData));
 			}
+
+			_data.LogAction(ActiveUser, $"Sent an email from address {_sender} to {_recipients.Count} recipient address{(_recipients.Count != 1 ? "es" : "")}.");
 		}
 
 		/// <summary>
@@ -312,6 +327,7 @@ namespace SMTPServer
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
+			_data.LogAction(ActiveUser, "Reset its session.");
 
 			State = SessionState.Connected;
 		}
@@ -321,6 +337,7 @@ namespace SMTPServer
 		/// </summary>
 		private void Quit()
 		{
+			_data.LogAction(ActiveUser, "Quit a running session.");
 			State = SessionState.Unavailable;
 		}
 

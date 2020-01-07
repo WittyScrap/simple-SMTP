@@ -20,8 +20,8 @@ namespace SMTPClient
 			Info,
 			Success,
 			Redirect,
-			ClientError,
-			ServerError
+			ServerError,
+			ClientError
 		}
 
 		/// <summary>

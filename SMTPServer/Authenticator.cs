@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NetworkSecurity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -66,6 +67,7 @@ namespace SMTPServer
 				}
 				else
 				{
+					_data.LogAction(username, "Logged in.");
 					Username = username;
 					return null;
 				}
@@ -81,7 +83,7 @@ namespace SMTPServer
 		/// </summary>
 		private bool CheckPassword(string password, User user)
 		{
-			password = SMTPData.HashPassword(password, user.Salt);
+			password = EncryptionUtilities.HashPassword(password, user.Salt);
 			return password == user.Password;
 		}
 
