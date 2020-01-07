@@ -36,7 +36,6 @@ namespace SMTPClient
 				try
 				{
 					clientShell.Send("QUIT\r\n", true);
-					clientShell.EnqueueDisconnection = true;
 				}
 				catch (IOException e)
 				{
