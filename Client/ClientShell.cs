@@ -60,38 +60,8 @@ namespace Client
 
 			Print(entityMachine, "Successfully connected to " + Remote);
 
-			_senderThread = new Thread(() =>
-			{
-				while (IsConnected)
-				{
-					try
-					{
-						SendAllMessages();
-					}
-					catch (Exception writeError)
-					{
-						Format.Error(this, entityMachine, writeError.Message);
-					}
-				}
-			});
-
-			_listenThread = new Thread(() =>
-			{
-				while (IsConnected)
-				{
-					if (Listen)
-					{
-						try
-						{
-							DisplayResponse();
-						}
-						catch (Exception readError)
-						{
-							Format.Error(this, entityMachine, readError.Message);
-						}
-					}
-				}
-			});
+			_senderThread = new Thread(SenderThread);
+			_listenThread = new Thread(ListenThread);
 
 			IsConnected = true;
 
@@ -101,6 +71,52 @@ namespace Client
 			if (UsingEncryption)
 			{
 				PerformKeyExchange();
+			}
+		}
+
+		/// <summary>
+		/// Handles sending all messages in the message queue.
+		/// </summary>
+		private void SenderThread()
+		{
+			while (IsConnected)
+			{
+				try
+				{
+					SendAllMessages();
+				}
+				catch (Exception writeError)
+				{
+					Format.Error(this, entityMachine, writeError.Message);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Handles displaying any message in the socket's message queue.
+		/// </summary>
+		private void ListenThread()
+		{
+			while (IsConnected)
+			{
+				bool anyResponse = false;
+
+				if (Listen)
+				{
+					try
+					{
+						anyResponse = DisplayResponse();
+					}
+					catch (Exception readError)
+					{
+						Format.Error(this, entityMachine, readError.Message);
+					}
+				}
+
+				if (!anyResponse && EnqueueDisconnection)
+				{
+					Disconnect();
+				}
 			}
 		}
 
@@ -341,7 +357,7 @@ namespace Client
 				message = EncryptMessage(message, _key.EncryptionKey);
 			}
 
-			_messageQueue.Enqueue(message);
+			EnqueueMessage(message);
 		}
 
 		/// <summary>
@@ -363,10 +379,22 @@ namespace Client
 		}
 
 		/// <summary>
+		/// Enqueues a message to be sent to the remote shell.
+		/// </summary>
+		/// <param name="message">The message to be enqueued.</param>
+		public void EnqueueMessage(string message)
+		{
+			if (!EnqueueDisconnection)
+			{
+				_messageQueue.Enqueue(message);
+			}
+		}
+
+		/// <summary>
 		/// Receives data from the connected socket and
 		/// displays it to the shell.
 		/// </summary>
-		private void DisplayResponse()
+		private bool DisplayResponse()
 		{
 			if (TryReceive(out string receivedData))
 			{
@@ -376,7 +404,11 @@ namespace Client
 				{
 					Print(entityHost, receivedData);
 				}
+
+				return true;
 			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -448,6 +480,12 @@ namespace Client
 		/// Tests if the socket has fully connected.
 		/// </summary>
 		public bool IsConnected { get; private set; }
+
+		/// <summary>
+		/// If this is set to true, no more messages will be allowed to be enqueued, and
+		/// as soon as the receive queue becomes emtpy the shell will disconnect.
+		/// </summary>
+		public bool EnqueueDisconnection { get; set; }
 
 		/// <summary>
 		/// Information on the remote host this shell is
