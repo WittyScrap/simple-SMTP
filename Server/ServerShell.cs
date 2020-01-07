@@ -205,10 +205,16 @@ namespace Server
 			{
 				bytesReceived = connection.Receive(client.ReadBuffer);
 			}
-			catch (SocketException e)
+			catch (SocketException/* e*/)
 			{
 				RemoveConnection(connection);
-				EnqueueCommand(() => Print(entityMachine, $"Connection receive exception: {e.ToString()}, connection closed."));
+//				Format.Error(this, entityMachine, e.Message);	// Okay but we don't want this. Do we want this? No. Yes? Nah.
+																//
+																// The reason why is that we can sometimes get exceptions thrown
+																// with regards to a socket that is being read from the listening
+																// thread immediately after its connection had already been closed.
+																// This yields a SocketException, and due to there not being much 
+																// can be done to change it, it's best to mute it instead for cleanliness.
 
 				return;
 			}

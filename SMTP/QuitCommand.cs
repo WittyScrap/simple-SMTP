@@ -36,6 +36,12 @@ namespace SMTPClient
 				try
 				{
 					clientShell.Send("QUIT\r\n", true);
+					SMTPResponse response = new SMTPResponse(clientShell.WaitForResponse());
+
+					if (response.ResponseCode == SMTPResponse.Code.Success)
+					{
+						clientShell.Disconnect();
+					}
 				}
 				catch (IOException e)
 				{
