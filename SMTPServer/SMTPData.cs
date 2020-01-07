@@ -37,18 +37,17 @@ namespace SMTPServer
 		public string InboxesFolder => Path.Combine(DirectoryRoot, "Inboxes");
 
 		/// <summary>
-		/// Contains an audit log of all actions from all clients.
+		/// The directory to store all audit logs into.
 		/// </summary>
-		public string AuditLog { get; private set; }
+		public string AuditFolder => Path.Combine(DirectoryRoot, "Logs");
 
 		/// <summary>
 		/// Initialises a connection to the users database.
 		/// </summary>
-		public SMTPData(string root, string databaseName, string auditLog)
+		public SMTPData(string root, string databaseName)
 		{
 			DirectoryRoot = root;
 			UsersDatabase = databaseName;
-			AuditLog = auditLog;
 
 			PrepareConfiguration();
 
@@ -63,6 +62,11 @@ namespace SMTPServer
 			if (!Directory.Exists(DirectoryRoot))
 			{
 				Directory.CreateDirectory(DirectoryRoot);
+			}
+
+			if (!Directory.Exists(AuditFolder))
+			{
+				Directory.CreateDirectory(AuditFolder);
 			}
 
 			if (!File.Exists(UsersPath))
@@ -141,7 +145,7 @@ namespace SMTPServer
 		public void SaveMail(Mail mail)
 		{
 			string inbox = GetInbox(mail.Receiver);
-			string emailName = EncryptionUtilities.CalculateHash($"{mail.Sender}{mail.Receiver}{User.GenerateSalt()}{DateTime.Now.Ticks.ToString()}.mail");
+			string emailName = EncryptionUtilities.CalculateHash($"{mail.Sender}{mail.Receiver}{User.GenerateSalt()}{DateTime.Now.Ticks.ToString()}") + ".mail";
 			string emailPath = Path.Combine(inbox, emailName);
 
 			File.WriteAllText(emailPath, mail.Serialise());
@@ -234,10 +238,21 @@ namespace SMTPServer
 		{
 			string header = $"[LOGGER::{DateTime.Now.ToString()}";
 			string body = $"{user} : {action}";
-
 			string hash = EncryptionUtilities.CalculateHash(body);
 
-			File.AppendAllText(AuditLog, $"{header}?:{hash}] - {body}\r\n");
+			File.AppendAllText(GetLogFilename(), $"{header}?:{hash}] - {body}\r\n");
+		}
+
+		/// <summary>
+		/// Returns the full path to the filename that should be used for
+		/// a logging action, this will be the Logs directory with a filename
+		/// selected to be the current date, with / being replaced with -.
+		/// </summary>
+		/// <returns></returns>
+		private string GetLogFilename()
+		{
+			string date = DateTime.Today.ToShortDateString().Replace('/', '-');
+			return Path.Combine(AuditFolder, date + ".log");
 		}
 
 		// Users data

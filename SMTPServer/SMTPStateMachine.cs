@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,11 +70,11 @@ namespace SMTPServer
 		{
 			if (command.Length < 6 || !SMTPCommandLookup.CommandExists(command.Substring(0, 4)))
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.SNTX, "Invalid or unrecognised command.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.SyntaxError, "Invalid or unrecognised command.");
 			}
 			else
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.NIMP, "Command not implemented.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.CommandNotImplemented, "Command not implemented.");
 			}
 		}
 
@@ -89,6 +90,41 @@ namespace SMTPServer
 				return UnrecognisedCommand(command);
 			}
 
+			try
+			{
+				return Evaluate(command, parsedCommand);
+			}
+			catch (Exception e)
+			{
+				return ProcessException(e);
+			}
+		}
+
+		/// <summary>
+		/// Attempts to decipher an uncaught exception and return an appropriate error code.
+		/// </summary>
+		/// <param name="e">The exception to process.</param>
+		/// <returns>An appropriate response code.</returns>
+		private string ProcessException(Exception e)
+		{
+			if (IsDiskFull(e))
+			{
+				return SMTPCodes.Compose(SMTPCodes.ServerError.InsufficientStorage, "Requested action not taken: insufficient system storage.");
+			}
+			else
+			{
+				return SMTPCodes.Compose(SMTPCodes.ClientError.TransactionFailed, $"Transaction failed [{e.Message}].");
+			}
+		}
+
+		/// <summary>
+		/// Evaluates a command that has been checked for invalidity.
+		/// This command is assumed to be a valid SMTP command.
+		/// </summary>
+		/// <param name="command">The command to evaluate.</param>
+		/// <returns>he response to the command.</returns>
+		private string Evaluate(string command, ISMTPCommand parsedCommand)
+		{
 			switch (State)
 			{
 				case SessionState.Connected:
@@ -165,11 +201,11 @@ namespace SMTPServer
 
 				if (checkingUser != null)
 				{
-					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, {checkingUser.Name} <{checkingUser.Email.Address}> verified.");
+					return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, $"OK, {checkingUser.Name} <{checkingUser.Email.Address}> verified.");
 				}
 				else
 				{
-					return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"{command.Username} could not be verified, user not local.");
+					return SMTPCodes.Compose(SMTPCodes.ClientError.UserNotLocal, $"{command.Username} could not be verified, user not local.");
 				}
 
 			}
@@ -190,7 +226,7 @@ namespace SMTPServer
 					_data.LogAction(ActiveUser, "Identified itself through a HELO command and started a session.");
 					State++;
 
-					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"Welcome to {Domain}, {_domain}.");
+					return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, $"Welcome to {Domain}, {_domain}.");
 				}
 				else
 				{
@@ -216,13 +252,13 @@ namespace SMTPServer
 				{
 					if (_data.VerifyMail(mail.Address) == null)
 					{
-						return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
+						return SMTPCodes.Compose(SMTPCodes.ClientError.UserNotLocal, $"User not local.");
 					}
 
 					_sender = mail.Address;
 					State++;
 
-					return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, sending from {_sender}.");
+					return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, $"OK, sending from {_sender}.");
 				}
 				else
 				{
@@ -250,12 +286,12 @@ namespace SMTPServer
 					{
 						if (_data.VerifyMail(rcpt.Address) == null)
 						{
-							return SMTPCodes.Compose(SMTPCodes.ClientError.USNL, $"User not local.");
+							return SMTPCodes.Compose(SMTPCodes.ClientError.UserNotLocal, $"User not local.");
 						}
 
 						_recipients.Add(rcpt.Address);
 
-						return SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"OK, sending to {rcpt.Address} ({_recipients.Count} total).");
+						return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, $"OK, sending to {rcpt.Address} ({_recipients.Count} total).");
 					}
 					else
 					{
@@ -296,9 +332,9 @@ namespace SMTPServer
 			if (_mailData.Length >= 5 && _mailData.Substring(_mailData.Length - 5) == "\r\n.\r\n")
 			{
 				SendMail();
-				Reset();
+				SoftReset();
 
-				return SMTPCodes.Compose(SMTPCodes.Status.SVOK, "Mail composition OK, sent.");
+				return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, "Mail composition OK, sent.");
 			}
 
 			return null;
@@ -320,20 +356,47 @@ namespace SMTPServer
 		}
 
 		/// <summary>
-		/// Resets the state of the server to <see cref="SessionState.Identified"/>.
+		/// Checks if an exception is describing a full disk.
 		/// </summary>
-		private void Reset()
+		/// <param name="ex"></param>
+		/// <returns></returns>
+		static bool IsDiskFull(Exception e)
+		{
+			const int HR_ERROR_HANDLE_DISK_FULL = unchecked((int)0x80070027);
+			const int HR_ERROR_DISK_FULL = unchecked((int)0x80070070);
+
+			return e.HResult == HR_ERROR_HANDLE_DISK_FULL
+				|| e.HResult == HR_ERROR_DISK_FULL;
+		}
+
+		/// <summary>
+		/// Restores this state machine back to the <see cref="SessionState.Identified"/> state and
+		/// resets any mail data variables.
+		/// </summary>
+		private void SoftReset()
 		{
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
-			_data.LogAction(ActiveUser, "Reset its session.");
+
+			State = SessionState.Identified;
+		}
+
+		/// <summary>
+		/// Resets the state of the server to <see cref="SessionState.Connected"/>.
+		/// </summary>
+		private void Reset()
+		{
+			_data.LogAction(ActiveUser, "Reset its session and logged out.");
+
+			Username = null;
+			SoftReset();
 
 			State = SessionState.Connected;
 		}
 
 		/// <summary>
-		/// Resets the state of the server to <see cref="SessionState.Connected"/>.
+		/// Resets the state of the server to <see cref="SessionState.Unavailable"/> to signal a disconnection.
 		/// </summary>
 		private void Quit()
 		{
@@ -366,12 +429,12 @@ namespace SMTPServer
 		/// <summary>
 		/// Message to be returned in the event of the server finding itself in an invalid state.
 		/// </summary>
-		private static string BadState => SMTPCodes.Compose(SMTPCodes.ServerError.SVER, "Invalid server state.");
+		private static string BadState => SMTPCodes.Compose(SMTPCodes.ServerError.ServiceError, "Bad server state.");
 
 		/// <summary>
 		/// Message to be returned when a correct command is issued in the wrong occasion.
 		/// </summary>
-		private static string BadOrder => SMTPCodes.Compose(SMTPCodes.ClientError.ORDR, "Bad sequence of commands.");
+		private static string BadOrder => SMTPCodes.Compose(SMTPCodes.ClientError.BadOrder, "Bad sequence of commands.");
 
 		/// <summary>
 		/// The current state of the SMTP session.

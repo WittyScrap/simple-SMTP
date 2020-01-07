@@ -19,7 +19,7 @@ namespace SMTPServer
 		/// <summary>
 		/// The success code (354).
 		/// </summary>
-		protected override string SuccessCode => SMTPCodes.Redirection.MAIL;
+		protected override string SuccessCode => SMTPCodes.Redirection.BeginMail;
 
 		/// <summary>
 		/// The success message.

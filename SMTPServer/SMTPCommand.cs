@@ -24,12 +24,12 @@ namespace SMTPServer
 		/// <summary>
 		/// The response for this command.
 		/// </summary>
-		public string Response => IsFormatted ? SMTPCodes.Compose(SuccessCode, SuccessMessage) : SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Incorrect syntax.");
+		public string Response => IsFormatted ? SMTPCodes.Compose(SuccessCode, SuccessMessage) : SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Incorrect syntax.");
 
 		/// <summary>
 		/// The code to be displayed on success.
 		/// </summary>
-		protected virtual string SuccessCode => SMTPCodes.Status.SVOK;
+		protected virtual string SuccessCode => SMTPCodes.Status.ServiceOK;
 
 		/// <summary>
 		/// The message to be displayed on success.

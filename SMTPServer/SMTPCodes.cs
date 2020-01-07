@@ -16,12 +16,12 @@ namespace SMTPServer
 		/// </summary>
 		public static class Status
 		{
-			public const string SYSM = "211";
-			public const string HELP = "214";
-			public const string REDY = "220";
-			public const string CLSE = "221";
-			public const string SVOK = "250";
-			public const string USNL = "251";
+			public const string SystemStatus = "211";
+			public const string HelpResponse = "214";
+			public const string SystemReady = "220";
+			public const string SystemClosing = "221";
+			public const string ServiceOK = "250";
+			public const string UserNotLocal = "251";
 		}
 
 		/// <summary>
@@ -29,7 +29,7 @@ namespace SMTPServer
 		/// </summary>
 		public static class Redirection
 		{
-			public const string MAIL = "354";
+			public const string BeginMail = "354";
 		}
 
 		/// <summary>
@@ -37,11 +37,11 @@ namespace SMTPServer
 		/// </summary>
 		public static class ServerError
 		{
-			public const string NOSV = "421";
-			public const string NOMB = "450";
-			public const string LERR = "451";
-			public const string STRG = "452";
-			public const string SVER = "471";
+			public const string ServiceUnavailable = "421";
+			public const string MailboxUnavailable = "450";
+			public const string ErrorAbort = "451";
+			public const string InsufficientStorage = "452";
+			public const string ServiceError = "471";
 		}
 
 		/// <summary>
@@ -49,16 +49,16 @@ namespace SMTPServer
 		/// </summary>
 		public static class ClientError
 		{
-			public const string SNTX = "500";
-			public const string PSTX = "501";
-			public const string NIMP = "502";
-			public const string ORDR = "503";
-			public const string PNIM = "504";
-			public const string NOMB = "550";
-			public const string USNL = "551";
-			public const string STRG = "552";
-			public const string MBNM = "553";
-			public const string FAIL = "554";
+			public const string SyntaxError = "500";
+			public const string ParameterError = "501";
+			public const string CommandNotImplemented = "502";
+			public const string BadOrder = "503";
+			public const string ParameterNotImplemented = "504";
+			public const string MailboxUnavailable = "550";
+			public const string UserNotLocal = "551";
+			public const string AllocationExceeded = "552";
+			public const string InvalidMailboxName = "553";
+			public const string TransactionFailed = "554";
 		}
 
 		/// <summary>

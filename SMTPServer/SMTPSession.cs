@@ -32,7 +32,7 @@ namespace SMTPServer
 			{
 				if (_stateMachine.State > SMTPStateMachine.SessionState.Connected && !_authenticator.IsAuthenticated)
 				{
-					return _authenticator.TryLogin(messageData) ?? SMTPCodes.Compose(SMTPCodes.Status.SVOK, $"Login OK; Welcome back, {_authenticator.Username}!");
+					return _authenticator.TryLogin(messageData) ?? SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, $"Login OK; Welcome back, {_authenticator.Username}!");
 				}
 				else if (_stateMachine.State < SMTPStateMachine.SessionState.Identified && _authenticator.IsAuthenticated)
 				{
@@ -53,7 +53,7 @@ namespace SMTPServer
 		/// </summary>
 		public string OnWelcome()
 		{
-			return SMTPCodes.Compose(SMTPCodes.Status.REDY, "Simple Mail Transfer Service Ready.");
+			return SMTPCodes.Compose(SMTPCodes.Status.SystemReady, "Simple Mail Transfer Service Ready.");
 		}
 
 		/// <summary>

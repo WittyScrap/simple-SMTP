@@ -42,7 +42,7 @@ namespace SMTPServer
 			{
 				IsFormatted = false;
 				Address = null;
-				Response = SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Incorrect syntax.");
+				Response = SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Incorrect syntax.");
 			}
 			else
 			{
@@ -54,7 +54,7 @@ namespace SMTPServer
 				{
 					IsFormatted = false;
 					Address = null;
-					Response = SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Incorrect syntax.");
+					Response = SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Incorrect syntax.");
 
 					return;
 				}
@@ -65,7 +65,7 @@ namespace SMTPServer
 				{
 					IsFormatted = false;
 					Address = null;
-					Response = SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Incorrect email address formatting.");
+					Response = SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Incorrect email address formatting.");
 
 					return;
 				}
@@ -77,7 +77,7 @@ namespace SMTPServer
 				{
 					IsFormatted = false;
 					Address = null;
-					Response = SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Invalid email address.");
+					Response = SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Invalid email address.");
 
 					return;
 				}

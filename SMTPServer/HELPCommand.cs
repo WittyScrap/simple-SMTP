@@ -19,7 +19,7 @@ namespace SMTPServer
 		/// <summary>
 		/// The code to display upon successful parsing.
 		/// </summary>
-		protected override string SuccessCode => SMTPCodes.Status.HELP;
+		protected override string SuccessCode => SMTPCodes.Status.HelpResponse;
 
 		/// <summary>
 		/// The specific command the user is requesting help for.

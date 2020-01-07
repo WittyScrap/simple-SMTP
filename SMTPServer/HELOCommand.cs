@@ -35,7 +35,7 @@ namespace SMTPServer
 		/// <summary>
 		/// The response code upon successful parsing.
 		/// </summary>
-		protected override string SuccessCode => Domain != null ? base.SuccessCode : SMTPCodes.ClientError.PSTX;
+		protected override string SuccessCode => Domain != null ? base.SuccessCode : SMTPCodes.ClientError.ParameterError;
 
 		/// <summary>
 		/// Parses a HELO command from a given source string.

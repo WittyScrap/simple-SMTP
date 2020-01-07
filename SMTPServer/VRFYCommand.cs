@@ -24,7 +24,7 @@ namespace SMTPServer
 		/// <summary>
 		/// The code to be returned upon successful parsing.
 		/// </summary>
-		protected override string SuccessCode => IsComplete ? "" : SMTPCodes.ClientError.PSTX;
+		protected override string SuccessCode => IsComplete ? "" : SMTPCodes.ClientError.ParameterError;
 
 		/// <summary>
 		/// Whether or not the command includes the username argument.

@@ -72,7 +72,7 @@ namespace SMTPServer
 
 			if (!IsValid)
 			{
-				SuccessCode = SMTPCodes.ClientError.SNTX;
+				SuccessCode = SMTPCodes.ClientError.SyntaxError;
 				SuccessMessage = "Invalid command syntax.";
 			}
 			else

@@ -52,8 +52,7 @@ namespace SMTPServer
 			Source = new SMTPData
 			(
 				config.Get<string>("SMTP.rootFolder"),
-				config.Get<string>("SMTP.databaseName"),
-				config.Get<string>("SMTP.logsName")
+				config.Get<string>("SMTP.databaseName")
 			);
 		}
 
@@ -92,7 +91,7 @@ namespace SMTPServer
 			if (Source == null)
 			{
 				Disconnected.Add(connection);
-				return SMTPCodes.Compose(SMTPCodes.ServerError.SVER, "Invalid server configuration, closing connection...");
+				return SMTPCodes.Compose(SMTPCodes.ServerError.ServiceError, "Invalid server configuration, closing connection...");
 			}
 
 			SMTPSession acceptedSession = new SMTPSession(Source);

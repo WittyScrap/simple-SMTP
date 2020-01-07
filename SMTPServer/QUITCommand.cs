@@ -19,7 +19,7 @@ namespace SMTPServer
 		/// <summary>
 		/// Overrides success code for QUIT (221).
 		/// </summary>
-		protected override string SuccessCode => SMTPCodes.Status.CLSE;
+		protected override string SuccessCode => SMTPCodes.Status.SystemClosing;
 
 		/// <summary>
 		/// The message to display as a response to a QUIT message.

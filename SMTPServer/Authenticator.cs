@@ -40,17 +40,17 @@ namespace SMTPServer
 		{
 			if (!SMTPParser.Parse(messageData, out ISMTPCommand command))
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.SNTX, "Invalid syntax.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.SyntaxError, "Invalid syntax.");
 			}
 
 			if (!(command is LOGICommand logiCommand))
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.ORDR, "Bad senquence of commands; you must login.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.BadOrder, "Bad senquence of commands; you must login.");
 			}
 
 			if (!logiCommand.IsValid)
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.PSTX, "Invalid argument syntax.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.ParameterError, "Invalid argument syntax.");
 			}
 
 			string username = logiCommand.Username;
@@ -63,7 +63,7 @@ namespace SMTPServer
 			{
 				if (!CheckPassword(password, user))
 				{
-					return SMTPCodes.Compose(SMTPCodes.ClientError.NOMB, "Login failed; invalid password.");
+					return SMTPCodes.Compose(SMTPCodes.ClientError.MailboxUnavailable, "Login failed; invalid password.");
 				}
 				else
 				{
@@ -74,7 +74,7 @@ namespace SMTPServer
 			}
 			else
 			{
-				return SMTPCodes.Compose(SMTPCodes.ClientError.NOMB, "Login failed; invalid username.");
+				return SMTPCodes.Compose(SMTPCodes.ClientError.MailboxUnavailable, "Login failed; invalid username.");
 			}
 		}
 		
