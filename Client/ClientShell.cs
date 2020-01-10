@@ -7,7 +7,6 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
 using NetworkSecurity;
-using System.Numerics;
 using VariableManagement;
 
 namespace Client

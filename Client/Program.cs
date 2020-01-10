@@ -17,9 +17,9 @@ namespace Client
         /// <param name="args">Optional argument list.</param>
         static void Main(string[] args)
         {
-			ClientShell shell = new ClientShell();
-			shell.Create(1000, 600);
-			shell.Run();
+            ClientShell shell = new ClientShell();
+            shell.Create(1000, 600);
+            shell.Run();
         }
     }
 }

@@ -332,7 +332,7 @@ namespace SMTPServer
 			if (_mailData.Length >= 5 && _mailData.Substring(_mailData.Length - 5) == "\r\n.\r\n")
 			{
 				SendMail();
-				SoftReset();
+				Reset();
 
 				return SMTPCodes.Compose(SMTPCodes.Status.ServiceOK, "Mail composition OK, sent.");
 			}
@@ -373,26 +373,13 @@ namespace SMTPServer
 		/// Restores this state machine back to the <see cref="SessionState.Identified"/> state and
 		/// resets any mail data variables.
 		/// </summary>
-		private void SoftReset()
+		private void Reset()
 		{
 			_mailData = "";
 			_sender = "";
 			_recipients.Clear();
 
 			State = SessionState.Identified;
-		}
-
-		/// <summary>
-		/// Resets the state of the server to <see cref="SessionState.Connected"/>.
-		/// </summary>
-		private void Reset()
-		{
-			_data.LogAction(ActiveUser, "Reset its session and logged out.");
-
-			Username = null;
-			SoftReset();
-
-			State = SessionState.Connected;
 		}
 
 		/// <summary>
